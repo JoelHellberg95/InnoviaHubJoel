@@ -23,6 +23,6 @@ jobs:
           TARGET_DIR="/var/www/innoviahub/backend-joel"
           cp -r ./publish/ "$TARGET_DIR"
 
-      - name: Restart innoviahub.service
+      - name: Restart innoviahub-joel.service
         run: |
           sudo systemctl restart innoviahub-joel.service
