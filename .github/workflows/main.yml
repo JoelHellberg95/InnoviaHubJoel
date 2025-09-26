@@ -20,9 +20,9 @@ jobs:
 
       - name: Move project to target directory
         run: |
-          TARGET_DIR="/var/www/innoviahub/backend"
+          TARGET_DIR="/var/www/innoviahub/backend-joel"
           cp -r ./publish/ "$TARGET_DIR"
 
       - name: Restart innoviahub.service
         run: |
-          sudo systemctl restart innoviahub.service
+          sudo systemctl restart innoviahub-joel.service
