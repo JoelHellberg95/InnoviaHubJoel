@@ -49,14 +49,18 @@ else
 // Joel's ändringar för rätt userinfo - CORS för att tillåta frontend att anropa API
 builder.Services.AddCors(opt => {
    opt.AddPolicy("ng", p => p
-      .WithOrigins("http://localhost:4200", "https://innoviahub-app-6hrgl.ondigitalocean.app")
+      .WithOrigins("http://localhost:4200", "https://innoviahub.hellbergsystems.se:8004")
       .AllowAnyHeader()
       .AllowAnyMethod()
       .AllowCredentials()
+      // TODO: Add Vercel domain when deployed: "https://your-vercel-domain.vercel.app"
    );
 });
 
 builder.Services.AddSignalR();
+
+// Joel's ändringar för rätt userinfo - HttpClient för OpenAI API anrop
+builder.Services.AddHttpClient();
 
 // Joel's ändringar för rätt userinfo - Dependency Injection för repositories
 //DI för repositories
