@@ -45,7 +45,7 @@ public class AppDbContext : DbContext
          new Resource { Id = 6, Name = "AI-server 1", ResourceTypeId = 4 }
       );
 
-      // Joel's ändringar för rätt userinfo - Tog bort alla hårdkodade bookings med fake användar-ID
+      // Tog bort alla hårdkodade bookings med fake användar-ID
       // No initial booking data - will be created when users make bookings med riktiga Azure AD-ID och namn
    }
 }

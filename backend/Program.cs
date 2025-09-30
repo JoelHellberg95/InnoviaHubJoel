@@ -5,10 +5,11 @@ using backend.Models.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Identity.Web;
+using System.Net.Http.Headers;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Joel's ändringar för rätt userinfo - Azure AD Authentication för att få riktiga användar-ID och namn
+// Azure AD Authentication för att få riktiga användar-ID och namn
 // Add Azure AD Authentication
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddMicrosoftIdentityWebApi(builder.Configuration.GetSection("AzureAd"));
@@ -46,7 +47,7 @@ else
       );
 }
 
-// Joel's ändringar för rätt userinfo - CORS för att tillåta frontend att anropa API
+// CORS för att tillåta frontend att anropa API
 builder.Services.AddCors(opt => {
    opt.AddPolicy("ng", p => p
       .WithOrigins("http://localhost:4200", "https://innoviahub.hellbergsystems.se:8004")
@@ -59,10 +60,23 @@ builder.Services.AddCors(opt => {
 
 builder.Services.AddSignalR();
 
-// Joel's ändringar för rätt userinfo - HttpClient för OpenAI API anrop
-builder.Services.AddHttpClient();
+// Creates a named HttpClient for OpenAI API calls
+builder.Services.AddHttpClient("OpenAIClient", client =>
+{
+   // Safe BaseUrl with fallback
+   var baseUrl = builder.Configuration["OpenAI:BaseUrl"] ?? "https://api.openai.com/v1/responses";
+   client.BaseAddress = new Uri(baseUrl);
+   
+   // Only set Authorization if API key exists
+   var apiKey = builder.Configuration["OpenAI:ApiKey"];
+   if (!string.IsNullOrEmpty(apiKey))
+   {
+      client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
+      client.DefaultRequestHeaders.Accept.ParseAdd("application/json");
+   }
+});
 
-// Joel's ändringar för rätt userinfo - Dependency Injection för repositories
+// Dependency Injection för repositories
 //DI för repositories
 builder.Services.AddScoped<IBookingRepository, BookingRepository>();
 builder.Services.AddScoped<IResourceRepository, ResourceRepository>();
@@ -70,7 +84,7 @@ builder.Services.AddScoped<IResourceRepository, ResourceRepository>();
 var app = builder.Build();
 
 
-// Joel's ändringar för rätt userinfo - CORS måste aktiveras före andra middleware
+// CORS måste aktiveras före andra middleware
 app.UseCors("ng");
 
 // Configure the HTTP request pipeline.
@@ -79,13 +93,13 @@ if (app.Environment.IsDevelopment())
    app.MapOpenApi();
 }
 
-// Joel's ändringar för rätt userinfo - Authentication och Authorization middleware för Azure AD
+// Authentication och Authorization middleware för Azure AD
 app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
-// Joel's ändringar för rätt userinfo - SignalR hub för realtidsuppdateringar av bokningar
+// SignalR hub för realtidsuppdateringar av bokningar
 app.MapHub<BookingHub>("/hubs/bookings");
 
 app.Run();

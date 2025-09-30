@@ -7,16 +7,16 @@ namespace backend.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
-[AllowAnonymous] // TODO: Replace with proper authorization
+[Authorize] // Kräver inloggning för OpenAI API-anrop
 public class OpenAIController : ControllerBase
 {
     private readonly IConfiguration _configuration;
-    private readonly HttpClient _httpClient;
+    private readonly IHttpClientFactory _httpClientFactory;
 
-    public OpenAIController(IConfiguration configuration, HttpClient httpClient)
+    public OpenAIController(IConfiguration configuration, IHttpClientFactory httpClientFactory)
     {
         _configuration = configuration;
-        _httpClient = httpClient;
+        _httpClientFactory = httpClientFactory;
     }
 
     [HttpPost("chat/completions")]
@@ -24,21 +24,19 @@ public class OpenAIController : ControllerBase
     {
         try
         {
+            // Använd named HttpClient som redan har OpenAI konfiguration
+            var httpClient = _httpClientFactory.CreateClient("OpenAIClient");
+            
             var openAiApiKey = _configuration["OpenAI:ApiKey"];
-            var openAiBaseUrl = _configuration["OpenAI:BaseUrl"];
-
             if (string.IsNullOrEmpty(openAiApiKey))
             {
                 return BadRequest("OpenAI API key is not configured");
             }
 
-            _httpClient.DefaultRequestHeaders.Clear();
-            _httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {openAiApiKey}");
-
             var json = JsonSerializer.Serialize(request);
             var content = new StringContent(json, Encoding.UTF8, "application/json");
 
-            var response = await _httpClient.PostAsync($"{openAiBaseUrl}/chat/completions", content);
+            var response = await httpClient.PostAsync("/chat/completions", content);
 
             if (response.IsSuccessStatusCode)
             {

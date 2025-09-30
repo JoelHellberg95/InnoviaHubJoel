@@ -96,7 +96,7 @@ var startUtc = dto.StartTime.Kind == DateTimeKind.Utc
         ? dto.EndTime
         : DateTime.SpecifyKind(dto.EndTime, DateTimeKind.Utc);
 
-            // Joel's ändringar för rätt userinfo - Säkerhetskontroll: Användare kan endast redigera sina egna bokningar
+            // Säkerhetskontroll: Användare kan endast redigera sina egna bokningar
             var existingBooking = await _bookings.GetById(id, ct);
             if (existingBooking is null) return NotFound();
             
@@ -137,7 +137,7 @@ var startUtc = dto.StartTime.Kind == DateTimeKind.Utc
         [HttpDelete("{id:int}")]
         public async Task<IActionResult> Delete(int id, CancellationToken ct)
         {
-            // Joel's ändringar för rätt userinfo - Säkerhetskontroll: Användare kan endast radera sina egna bokningar
+            // Säkerhetskontroll: Användare kan endast radera sina egna bokningar
             var existingBooking = await _bookings.GetById(id, ct);
             if (existingBooking is null) return NotFound();
             
