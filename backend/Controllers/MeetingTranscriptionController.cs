@@ -301,7 +301,7 @@ public class MeetingTranscriptionController : ControllerBase
                 var fileContent = new StreamContent(new MemoryStream(audioData));
                 fileContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("audio/mpeg");
                 content.Add(fileContent, "file", fileName);
-                content.Add(new StringContent("whisper-1"), "model");
+                content.Add(new StringContent("gpt-4o-mini-transcribe"), "model");
                 
                 // Use full URL to avoid NotFound error
                 var whisperUrl = "https://api.openai.com/v1/audio/transcriptions";
@@ -391,7 +391,7 @@ public class MeetingTranscriptionController : ControllerBase
 
         var requestObj = new
         {
-            model = "gpt-3.5-turbo",
+            model = "gpt-4.1",
             messages = new[] {
                 new { role = "system", content = systemMessage },
                 new { role = "user", content = userMessage }

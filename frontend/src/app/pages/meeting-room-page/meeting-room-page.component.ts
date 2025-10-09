@@ -64,6 +64,9 @@ export class MeetingRoomPageComponent implements OnInit, OnDestroy {
   meetingStarted = false;
   meetingEnded = false;
   
+  // --- Kostnadsberäkning för transkribering ---
+  uploadedFileDuration: number | null = null;
+
   ngOnInit() {
     const bookingId = this.route.snapshot.paramMap.get('id');
     if (bookingId) {
@@ -99,21 +102,28 @@ export class MeetingRoomPageComponent implements OnInit, OnDestroy {
   onFileSelected(event: any) {
     const file = event.target.files[0];
     if (file) {
-      // Validera filtyp (endast webm, wav, mp3 tillåtna)
+      // Validate file type (webm, wav, mp3, mpeg only)
       const allowedTypes = ['audio/webm', 'audio/wav', 'audio/mp3', 'audio/mpeg'];
       if (!allowedTypes.includes(file.type)) {
         this.error = 'Endast .webm, .wav och .mp3 filer är tillåtna';
         return;
       }
-      
-      // Validera filstorlek (max 25MB)
+      // Validate file size (max 25MB)
       if (file.size > 25 * 1024 * 1024) {
         this.error = 'Filen är för stor. Max 25MB tillåtet.';
         return;
       }
-      
       this.selectedFile = file;
       this.error = '';
+      // Extract duration from uploaded file
+      this.uploadedFileDuration = null;
+      const audio = document.createElement('audio');
+      audio.preload = 'metadata';
+      audio.onloadedmetadata = () => {
+        window.URL.revokeObjectURL(audio.src);
+        this.uploadedFileDuration = Math.round(audio.duration);
+      };
+      audio.src = URL.createObjectURL(file);
     }
   }
 
@@ -329,6 +339,24 @@ export class MeetingRoomPageComponent implements OnInit, OnDestroy {
     return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
   }
 
+  // --- Joel's ändringar: Kostnadsberäkning för transkribering ---
+  calculateTranscriptionCost(): string {
+    // Only calculate cost if we have a valid audio duration
+    let duration = 0;
+    if (this.transcriptionResult) {
+      if (this.recordedAudio && this.recordedAudio.duration > 0) {
+        duration = this.recordedAudio.duration;
+      } else if (this.uploadedFileDuration && this.uploadedFileDuration > 0) {
+        duration = this.uploadedFileDuration;
+      }
+    }
+    if (duration > 0) {
+      const cost = duration * 0.015;
+      return cost.toFixed(2);
+    }
+    return '-';
+  }
+
   ngOnDestroy() {
     // Stoppa inspelning och rensa resurser
     if (this.isRecording) {
@@ -368,5 +396,20 @@ export class MeetingRoomPageComponent implements OnInit, OnDestroy {
       hour: '2-digit', 
       minute: '2-digit' 
     })}`;
+  }
+
+  // --- Joel's ändringar: Ladda ner transkribering som textfil ---
+  downloadTranscriptionText() {
+    if (!this.transcriptionResult?.transcription) return;
+    const text = this.transcriptionResult.transcription;
+    const blob = new Blob([text], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'transkribering.txt';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   }
 }

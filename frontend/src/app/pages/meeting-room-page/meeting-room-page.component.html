@@ -264,6 +264,10 @@
 
           <!-- Progress Bar -->
           <div *ngIf="isTranscribing" class="space-y-2">
+            <div class="flex items-center justify-center py-6">
+              <span class="material-symbols-rounded animate-spin text-4xl text-primary">autorenew</span>
+              <span class="ml-3 text-lg text-primary font-semibold">Transkriberar ljudfil...</span>
+            </div>
             <div class="flex items-center justify-between text-sm">
               <span class="text-text/70">Behandlar ljudfil...</span>
               <span class="text-text/70">{{ uploadProgress }}%</span>
@@ -284,6 +288,14 @@
 
         <!-- Results Section -->
         <div *ngIf="transcriptionResult" class="space-y-6">
+          <!-- Cost Calculation -->
+          <div class="p-4 bg-bg-alt rounded-lg border flex items-center gap-3">
+            <span class="material-symbols-rounded text-primary">attach_money</span>
+            <div>
+              <h4 class="font-semibold text-heading">Beräknad kostnad</h4>
+              <p class="text-text">{{ calculateTranscriptionCost() }} kr (estimerat)</p>
+            </div>
+          </div>
           <!-- Success/Error Message -->
           <div 
             class="p-4 rounded-lg flex items-center gap-3"
@@ -298,63 +310,60 @@
             {{ transcriptionResult.message }}
           </div>
 
-          <!-- Transcription Results -->
-          <div *ngIf="transcriptionResult.success" class="space-y-6">
-            <!-- Summary -->
-            <div *ngIf="transcriptionResult.summary" class="space-y-3">
-              <div class="flex items-center gap-2">
-                <span class="material-symbols-rounded text-primary">summarize</span>
-                <h4 class="font-semibold text-heading">Sammanfattning</h4>
-              </div>
-              <div class="p-4 bg-bg rounded-lg border">
-                <p class="text-text">{{ transcriptionResult.summary }}</p>
-              </div>
+          <!-- Summary -->
+          <div *ngIf="transcriptionResult.summary" class="space-y-3">
+            <div class="flex items-center gap-2">
+              <span class="material-symbols-rounded text-primary">summarize</span>
+              <h4 class="font-semibold text-heading">Sammanfattning</h4>
             </div>
+            <div class="p-4 bg-bg rounded-lg border">
+              <p class="text-text">{{ transcriptionResult.summary }}</p>
+            </div>
+          </div>
 
-            <!-- Action Points -->
-            <div *ngIf="transcriptionResult.actionPoints?.length" class="space-y-3">
-              <div class="flex items-center gap-2">
-                <span class="material-symbols-rounded text-primary">task_alt</span>
-                <h4 class="font-semibold text-heading">Åtgärdspunkter</h4>
-              </div>
-              <div class="p-4 bg-bg rounded-lg border">
-                <ul class="space-y-2">
-                  <li 
-                    *ngFor="let point of transcriptionResult.actionPoints" 
-                    class="flex items-start gap-2"
-                  >
-                    <span class="material-symbols-rounded text-sm text-primary mt-0.5">arrow_right</span>
-                    <span class="text-text">{{ point }}</span>
-                  </li>
-                </ul>
-              </div>
+          <!-- Action Points -->
+          <div *ngIf="transcriptionResult.actionPoints?.length" class="space-y-3">
+            <div class="flex items-center gap-2">
+              <span class="material-symbols-rounded text-primary">task_alt</span>
+              <h4 class="font-semibold text-heading">Att göra</h4>
             </div>
+            <div class="p-4 bg-bg rounded-lg border">
+              <ul class="space-y-2">
+                <li *ngFor="let point of transcriptionResult.actionPoints" class="flex items-start gap-2">
+                  <span class="material-symbols-rounded text-sm text-primary mt-0.5">arrow_right</span>
+                  <span class="text-text">{{ point }}</span>
+                </li>
+              </ul>
+            </div>
+          </div>
 
-            <!-- Full Transcription -->
-            <div *ngIf="transcriptionResult.transcription" class="space-y-3">
-              <div class="flex items-center gap-2">
-                <span class="material-symbols-rounded text-primary">transcribe</span>
-                <h4 class="font-semibold text-heading">Fullständig transkribering</h4>
-              </div>
-              <div class="p-4 bg-bg rounded-lg border max-h-64 overflow-y-auto">
-                <p class="text-text whitespace-pre-wrap">{{ transcriptionResult.transcription }}</p>
-              </div>
+          <!-- Full Transcription -->
+          <div *ngIf="transcriptionResult.transcription" class="space-y-3">
+            <div class="flex items-center gap-2">
+              <span class="material-symbols-rounded text-primary">transcribe</span>
+              <h4 class="font-semibold text-heading">Råtext</h4>
             </div>
+            <div class="p-4 bg-bg rounded-lg border max-h-64 overflow-y-auto">
+              <p class="text-text whitespace-pre-wrap">{{ transcriptionResult.transcription }}</p>
+            </div>
+          </div>
 
-            <!-- Actions -->
-            <div class="flex gap-3 pt-4 border-t">
-              <button
-                (click)="transcriptionResult = null; selectedFile = null"
-                class="inline-flex items-center gap-2 px-4 py-2 rounded-lg font-medium shadow text-primary bg-transparent border border-primary"
-              >
-                <span class="material-symbols-rounded mr-2">refresh</span>
-                Ny transkribering
-              </button>
-              <button class="inline-flex items-center gap-2 px-4 py-2 rounded-lg font-medium shadow-lg text-white bg-primary hover:bg-primary/90">
-                <span class="material-symbols-rounded mr-2">download</span>
-                Ladda ner resultat
-              </button>
-            </div>
+          <!-- Actions -->
+          <div class="flex gap-3 pt-4 border-t">
+            <button
+              (click)="transcriptionResult = null; selectedFile = null"
+              class="inline-flex items-center gap-2 px-4 py-2 rounded-lg font-medium shadow text-primary bg-transparent border border-primary"
+            >
+              <span class="material-symbols-rounded mr-2">refresh</span>
+              Ny transkribering
+            </button>
+            <button
+              (click)="downloadTranscriptionText()"
+              class="inline-flex items-center gap-2 px-4 py-2 rounded-lg font-medium shadow-lg text-white bg-primary hover:bg-primary/90"
+            >
+              <span class="material-symbols-rounded mr-2">download</span>
+              Ladda ner text
+            </button>
           </div>
         </div>
       </div>
