@@ -1,6 +1,6 @@
 // resources-list.component.ts
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, output, Output } from '@angular/core';
+import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { ResourceItem } from '../ResourceMenu/models/Resource';
 import { ButtonComponent } from '../button/button.component';
 import { ResourceType } from '../ResourceMenu/Services/ResourceTypeService.service';
@@ -9,7 +9,7 @@ import { FormsModule } from '@angular/forms';
 @Component({
   selector: 'app-resources-list',
   standalone: true,
-  imports: [CommonModule, ButtonComponent, FormsModule],
+  imports: [CommonModule, FormsModule],
   templateUrl: './resources-list.component.html',
 })
 export class ResourcesListComponent {
@@ -19,7 +19,6 @@ export class ResourcesListComponent {
 
   @Input() types: ResourceType[] = [];
   @Input() selectedTypeId: number | null = null;
-
   @Output() typeChange = new EventEmitter<number>();
   @Output() edit = new EventEmitter<ResourceItem>();
   @Output() remove = new EventEmitter<ResourceItem>();

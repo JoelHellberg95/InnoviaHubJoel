@@ -29,11 +29,20 @@
   <div class="confirmation-popup__message">
     <h1 class="confirmation-popup__title">Din bokning är bekräftad!</h1>
     <div class="confirmation-popup__actions">
+      <button type="button" (click)="goToMeetingRoom()" *ngIf="createdBookingId">
+        <app-button
+          label="Gå till mötesrum"
+          size="small"
+          bgColor="var(--color-primary-dark)"
+        ></app-button>
+      </button>
       <a routerLink="/profil">
         <app-button
           label="Gå till profil"
           size="small"
           bgColor="var(--color-primary-dark)"
+          buttonStyle="outlined"
+          textColor="var(--color-primary-dark)"
         ></app-button>
       </a>
       <button type="button" (click)="buttonClicked.emit('stay')">

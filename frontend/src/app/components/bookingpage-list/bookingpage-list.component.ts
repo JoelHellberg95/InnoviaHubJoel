@@ -32,6 +32,7 @@ export class BookingpageListComponent {
   confirmationIsVisible = false;
   isBooked = false;
   errorMessage = '';
+  createdBookingId: number | null = null;
 
   private bookingApi = inject(BookingService);
   private authService = inject(AuthService);
@@ -70,6 +71,7 @@ export class BookingpageListComponent {
     if (e === 'cancel' || e === 'stay') {
       this.confirmationIsVisible = false;
       this.isBooked = false;
+      this.createdBookingId = null;
       return;
     }
 
@@ -107,6 +109,7 @@ export class BookingpageListComponent {
           return;
         }
         this.isBooked = true;
+        this.createdBookingId = response.body?.id || null;
 
         // be parent (pane) att ladda om resources direkt
         this.bookingCommitted.emit();

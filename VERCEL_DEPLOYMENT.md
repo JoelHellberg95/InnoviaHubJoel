@@ -10,7 +10,7 @@ This guide covers deploying the InnoviaHub Angular frontend to Vercel while conn
 - Vercel account connected to GitHub
 - OpenAI API key (keep this secure!)
 
-## ⚠️ Security Warning
+                  ## ⚠️ Security Warning
 
 **NEVER commit API keys to GitHub!**
 
@@ -41,21 +41,17 @@ Vercel should auto-detect Angular, but verify these settings:
 
 Add these environment variables in Vercel dashboard:
 
-```env
-NG_APP_API_URL=https://innoviahub.hellbergsystems.se:8004
-NG_APP_HUB_URL=wss://innoviahub.hellbergsystems.se:8004/hubs/bookings
-NG_APP_LOGIN_REDIRECT_URL=https://your-vercel-domain.vercel.app/profil
-NG_APP_LOGOUT_REDIRECT_URL=https://your-vercel-domain.vercel.app/logga-in
-NG_APP_OPENAI_API_KEY=your-actual-openai-api-key-here
-```
+    NG_APP_API_URL=https://innoviahub.hellbergsystems.se:8004
+    NG_APP_HUB_URL=wss://innoviahub.hellbergsystems.se:8004/hubs/bookings
+    NG_APP_LOGIN_REDIRECT_URL=https://your-vercel-domain.vercel.app/profil
+    NG_APP_LOGOUT_REDIRECT_URL=https://your-vercel-domain.vercel.app/logga-in
+    NG_APP_OPENAI_API_KEY=your-actual-openai-api-key-here
 
 ### 4. Update Backend CORS
 
 After deployment, update your backend `Program.cs` to include your Vercel domain:
 
-```csharp
-.WithOrigins("http://localhost:4200", "https://your-vercel-domain.vercel.app")
-```
+    .WithOrigins("http://localhost:4200", "https://your-vercel-domain.vercel.app")
 
 ### 5. Update Azure AD Redirect URIs
 
@@ -66,14 +62,12 @@ In your Azure AD app registration, add your Vercel domain to:
 
 ## File Structure for Vercel
 
-```text
-frontend/
-├── vercel.json              # Vercel configuration
-├── .env.vercel.example      # Environment variables template
-├── scripts/generate-env.js  # Runs during build to create env.js
-├── package.json            # Contains prebuild script
-└── src/assets/env.js       # Generated at build time
-```
+    frontend/
+    ├── vercel.json              # Vercel configuration
+    ├── .env.vercel.example      # Environment variables template
+    ├── scripts/generate-env.js  # Runs during build to create env.js
+    ├── package.json            # Contains prebuild script
+    └── src/assets/env.js       # Generated at build time
 
 ## Build Process
 

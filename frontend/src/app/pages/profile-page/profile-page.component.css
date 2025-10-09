@@ -266,9 +266,85 @@
   font-weight: 500;
 }
 
+/* Inspelningar sektion */
+.recordings-section {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  margin-top: 2rem;
+}
+
+.recordings-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.recording-item {
+  background: var(--color-bg, #fff);
+  border: 1px solid var(--color-border, #e0e0e0);
+  border-radius: 12px;
+  padding: 1rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.recording-item:hover {
+  border-color: var(--color-primary, #ff6b6b);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.recording-item.selected {
+  border-color: var(--color-primary, #ff6b6b);
+  background: var(--color-primary-light, #fff5f5);
+  box-shadow: 0 2px 8px rgba(255, 107, 107, 0.2);
+}
+
+.recording-title {
+  font-weight: 600;
+  color: var(--color-text, #333);
+  margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.recording-date {
+  color: var(--color-text-secondary, #666);
+  font-size: 0.9rem;
+  margin-bottom: 0.25rem;
+}
+
+.recording-info {
+  color: var(--color-text-secondary, #666);
+  font-size: 0.8rem;
+  margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.recording-filename {
+  font-size: 0.8rem;
+  color: var(--color-text-secondary, #666);
+  background: var(--color-bg-alt, #f5f5f5);
+  padding: 0.25rem 0.5rem;
+  border-radius: 6px;
+  font-family: monospace;
+}
+
+.recording-details {
+  background: var(--color-bg, #fff);
+  border-radius: 12px;
+  padding: 1.5rem;
+  border: 1px solid var(--color-border, #e0e0e0);
+  height: fit-content;
+}
+
 /* Responsiv design */
 @media (max-width: 768px) {
-  .bookings-section {
+  .bookings-section,
+  .recordings-section {
     grid-template-columns: 1fr;
   }
   

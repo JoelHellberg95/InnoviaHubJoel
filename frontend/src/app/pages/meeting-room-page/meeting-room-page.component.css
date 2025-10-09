@@ -1,0 +1,85 @@
+.page-container {
+  min-height: 100vh;
+  background-color: var(--color-bg, #ffffff);
+}
+
+.page-container__inner {
+  padding-left: 1rem;
+  padding-right: 1rem;
+  padding-top: 2rem;
+  padding-bottom: 2rem;
+}
+
+.spin-slow {
+  animation: spin 2s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Custom styling for file input and progress */
+.upload-zone {
+  transition: all 0.2s ease;
+}
+
+.upload-zone:hover {
+  border-color: rgb(var(--color-primary) / 0.5);
+  background-color: rgb(var(--color-primary) / 0.05);
+}
+
+.progress-bar {
+  transition: width 0.3s ease;
+}
+
+/* Meeting status indicator */
+.status-indicator {
+  position: relative;
+}
+
+.status-indicator::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: -12px;
+  transform: translateY(-50%);
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: currentColor;
+}
+
+/* Transcription results styling */
+.transcription-section {
+  scroll-behavior: smooth;
+}
+
+.transcription-text {
+  line-height: 1.7;
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .page-container__inner {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+    padding-top: 1.5rem;
+    padding-bottom: 1.5rem;
+  }
+  
+  .meeting-info-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+  
+  .upload-section {
+    padding: 1rem;
+  }
+}

@@ -1,13 +1,17 @@
 <button
-  [type]="type()"
-  [class]="cssClasses()"
-  [style.backgroundColor]="
-    buttonStyle() === 'outlined' ? 'transparent' : bgColor()
-  "
-  [style.border]="'solid 1px ' + bgColor()"
+  [type]="type"
+  [class]="cssClasses"
+  [style.backgroundColor]="buttonStyle === 'outlined' ? 'transparent' : bgColor"
+  [style.border]="'solid 1px ' + bgColor"
   [style.color]="textColor"
-  [disabled]="disabled()"
+  [disabled]="disabled"
   (click)="handleClick($event)"
 >
-  {{ label() }}
+  <ng-container *ngIf="hasProjectedContent; else showLabel">
+    <ng-content></ng-content>
+  </ng-container>
+
+  <ng-template #showLabel>
+    {{ label }}
+  </ng-template>
 </button>

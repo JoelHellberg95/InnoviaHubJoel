@@ -29,7 +29,7 @@ InnoviaHub är en webbapplikation där användare kan:
 
 ### Snabbstart
 
-Om du inte vill installera applikationen själv finns produktionsmiljön tillgänglig på https://innoviahub-app-6hrgl.ondigitalocean.app/.
+Om du inte vill installera applikationen själv finns produktionsmiljön tillgänglig på [Digital Ocean](https://innoviahub-app-6hrgl.ondigitalocean.app/).
 
 ### Entra ID
 
@@ -113,4 +113,4 @@ Om något inte fungerar:
 
 ---
 
-**Skapad av InnoviaHub-teamet** 🚀
+## Skapad av InnoviaHub-teamet

@@ -9,6 +9,30 @@ using System.Net.Http.Headers;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Load .env file for local development (if it exists)
+if (File.Exists(".env"))
+{
+    Console.WriteLine("📁 Loading .env file...");
+    foreach (var line in File.ReadAllLines(".env"))
+    {
+        if (string.IsNullOrWhiteSpace(line) || line.StartsWith("#")) continue;
+        
+        var parts = line.Split('=', 2, StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length == 2)
+        {
+            Environment.SetEnvironmentVariable(parts[0], parts[1]);
+            Console.WriteLine($"✅ Set {parts[0]} = {parts[1].Substring(0, Math.Min(10, parts[1].Length))}...");
+        }
+    }
+    
+    // Rebuild configuration to include environment variables
+    builder.Configuration.AddEnvironmentVariables();
+}
+else
+{
+    Console.WriteLine("❌ No .env file found");
+}
+
 // Azure AD Authentication för att få riktiga användar-ID och namn
 // Add Azure AD Authentication
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -31,7 +55,7 @@ builder.Services.AddOpenApi();
 
 
 // För att använda inMemory-databas, sätt useInMemory till true
-var useInMemory = false;
+var useInMemory = true;
 
 if (useInMemory)
 {
@@ -48,13 +72,16 @@ else
 }
 
 // CORS för att tillåta frontend att anropa API
+// Lokalt: localhost:4200, Vercel: din-vercel-domain.vercel.app
 builder.Services.AddCors(opt => {
    opt.AddPolicy("ng", p => p
-      .WithOrigins("http://localhost:4200", "https://innoviahub.hellbergsystems.se:8004")
+      .WithOrigins(
+         "http://localhost:4200",  // Local development
+         "https://your-vercel-domain.vercel.app"  // Vercel production (update this!)
+      )
       .AllowAnyHeader()
       .AllowAnyMethod()
       .AllowCredentials()
-      // TODO: Add Vercel domain when deployed: "https://your-vercel-domain.vercel.app"
    );
 });
 
@@ -63,16 +90,23 @@ builder.Services.AddSignalR();
 // Creates a named HttpClient for OpenAI API calls
 builder.Services.AddHttpClient("OpenAIClient", client =>
 {
-   // Safe BaseUrl with fallback
-   var baseUrl = builder.Configuration["OpenAI:BaseUrl"] ?? "https://api.openai.com/v1/responses";
+   // Use OpenAI API root as base URL. If you override in appsettings, include the v1 root.
+   var baseUrl = builder.Configuration["OpenAI:BaseUrl"] ?? "https://api.openai.com/v1";
    client.BaseAddress = new Uri(baseUrl);
    
    // Only set Authorization if API key exists
    var apiKey = builder.Configuration["OpenAI:ApiKey"];
+   Console.WriteLine($"🔑 OpenAI API Key from config: {(string.IsNullOrEmpty(apiKey) ? "MISSING" : $"{apiKey.Substring(0, Math.Min(15, apiKey.Length))}...")}");
+   
    if (!string.IsNullOrEmpty(apiKey))
    {
       client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
       client.DefaultRequestHeaders.Accept.ParseAdd("application/json");
+      Console.WriteLine("✅ OpenAI HttpClient configured with API key");
+   }
+   else
+   {
+      Console.WriteLine("❌ No OpenAI API key found in configuration");
    }
 });
 

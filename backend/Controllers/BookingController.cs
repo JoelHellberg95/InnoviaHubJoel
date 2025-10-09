@@ -147,9 +147,7 @@ var startUtc = dto.StartTime.Kind == DateTimeKind.Utc
                 !Guid.TryParse(userIdString, out var userId) ||
                 existingBooking.UserId != userId)
             {
-                return StatusCode(StatusCodes.Status403Forbidden,
-            new { message = "Du kan endast radera dina egna bokningar" });
-
+                return StatusCode(StatusCodes.Status403Forbidden, new { message = "Du kan endast radera dina egna bokningar" });
             }
 
             var ok = await _bookings.Delete(id, ct);

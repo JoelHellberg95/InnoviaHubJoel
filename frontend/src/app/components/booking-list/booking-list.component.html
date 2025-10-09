@@ -36,7 +36,7 @@
         'hover:bg-bg': b.id !== selectedId
       }"
     >
-      <div>
+      <div class="flex-1">
         <div class="font-medium text-heading">
           {{ b.resourceName || "Bokning" }}
         </div>
@@ -45,7 +45,21 @@
           {{ b.endTime | date : "HH:mm" }} | Av: {{ b.userName || shortGuid(b.userId) }}
         </div>
       </div>
-      <span>›</span>
+      
+      <div class="flex items-center gap-2">
+        <!-- Mötesrum-knapp (endast för aktuella/framtida bokningar) -->
+        <button
+          *ngIf="isToday(b.startTime) || isFuture(b.startTime)"
+          (click)="goToMeetingRoom(b.id, $event)"
+          class="inline-flex items-center gap-1 px-2 py-1 text-xs bg-primary/10 text-primary rounded-md hover:bg-primary/20 transition-colors"
+          title="Gå till mötesrum"
+        >
+          <span class="material-symbols-rounded text-sm">meeting_room</span>
+          <span class="hidden sm:inline">Mötesrum</span>
+        </button>
+        
+        <span class="text-border">›</span>
+      </div>
     </li>
 
     <li

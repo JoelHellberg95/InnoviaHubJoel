@@ -16,8 +16,20 @@
 
     <!-- Filter knappar (likt din design) -->
     <div class="filter-buttons">
-      <button class="filter-btn active">Alla bokningar</button>
-      <button class="filter-btn">Alla sensorer</button>
+      <button 
+        class="filter-btn"
+        [class.active]="activeTab === 'bookings'"
+        (click)="setActiveTab('bookings')"
+      >
+        Alla bokningar
+      </button>
+      <button 
+        class="filter-btn"
+        [class.active]="activeTab === 'recordings'"
+        (click)="setActiveTab('recordings')"
+      >
+        Mina inspelningar
+      </button>
     </div>
 
     <!-- Loading state -->
@@ -31,7 +43,7 @@
     </div>
 
     <!-- Bokningar sektion -->
-    <div class="bookings-section" *ngIf="!isLoading && !errorMessage">
+    <div class="bookings-section" *ngIf="!isLoading && !errorMessage && activeTab === 'bookings'">
       
       <!-- Bokningslista (vänster sida) -->
       <div class="bookings-list">
@@ -73,6 +85,18 @@
           <div class="detail-row">
             <strong>Bokad:</strong>
             <span>{{ selectedBooking.createdAt | date:'short' }}</span>
+          </div>
+
+          <!-- Gå till mötesrum knapp -->
+          <div class="detail-actions" style="margin-bottom: 1rem;">
+            <button 
+              class="btn btn-primary" 
+              (click)="goToMeetingRoom()"
+              style="background-color: #2563eb; color: white; padding: 0.5rem 1rem; border: none; border-radius: 0.5rem; cursor: pointer; font-weight: 500; display: flex; align-items: center; gap: 0.5rem;"
+            >
+              <span style="font-family: 'Material Symbols Rounded'; font-size: 1.25rem;">meeting_room</span>
+              Öppna mötesrum
+            </button>
           </div>
 
           <!-- Joel's ändringar för rätt userinfo - Redigering och radering UI -->
@@ -119,6 +143,108 @@
             <div class="edit-actions">
               <button class="btn btn-primary" (click)="saveEdit()">Spara</button>
               <button class="btn btn-secondary" (click)="cancelEdit()">Avbryt</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+    </div>
+
+    <!-- Inspelningar sektion -->
+    <div class="recordings-section" *ngIf="!isLoading && !errorMessage && activeTab === 'recordings'">
+      
+      <!-- Loading state för inspelningar -->
+      <div *ngIf="isLoadingRecordings" class="loading">
+        Laddar dina inspelningar...
+      </div>
+
+      <!-- Inspelningslista (vänster sida) -->
+      <div class="recordings-list" *ngIf="!isLoadingRecordings">
+        <h3 *ngIf="recordings.length === 0">Inga inspelningar hittades</h3>
+        
+        <div 
+          *ngFor="let recording of recordings" 
+          class="recording-item"
+          [class.selected]="selectedRecording?.id === recording.id"
+          (click)="selectRecording(recording)"
+        >
+          <div class="recording-title">
+            <span class="material-symbols-rounded" style="font-size: 1.25rem; color: #ef4444;">mic</span>
+            {{ recording.booking?.resourceName || 'Okänt mötesrum' }}
+          </div>
+          <div class="recording-date">{{ recording.createdAt | date:'shortDate' }}</div>
+          <div class="recording-info">
+            <span>{{ formatFileSize(recording.fileSizeBytes) }}</span>
+            <span>•</span>
+            <span>{{ formatDuration(recording.durationSeconds) }}</span>
+          </div>
+          <div class="recording-filename">{{ recording.fileName }}</div>
+        </div>
+      </div>
+
+      <!-- Inspelningsdetaljer (höger sida) -->
+      <div class="recording-details" *ngIf="selectedRecording && !isLoadingRecordings">
+        <div class="details-card">
+          <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem;">
+            <span class="material-symbols-rounded" style="font-size: 2rem; color: #ef4444;">audio_file</span>
+            <div>
+              <h3>{{ selectedRecording.booking?.resourceName || 'Inspelning' }}</h3>
+              <p style="margin: 0; color: #6b7280; font-size: 0.875rem;">{{ selectedRecording.fileName }}</p>
+            </div>
+          </div>
+          
+          <div class="detail-row">
+            <strong>Möte:</strong>
+            <span>{{ selectedRecording.booking?.startTime | date:'short' }}</span>
+          </div>
+          
+          <div class="detail-row">
+            <strong>Inspelad:</strong>
+            <span>{{ selectedRecording.createdAt | date:'short' }}</span>
+          </div>
+          
+          <div class="detail-row">
+            <strong>Filstorlek:</strong>
+            <span>{{ formatFileSize(selectedRecording.fileSizeBytes) }}</span>
+          </div>
+          
+          <div class="detail-row" *ngIf="selectedRecording.durationSeconds > 0">
+            <strong>Längd:</strong>
+            <span>{{ formatDuration(selectedRecording.durationSeconds) }}</span>
+          </div>
+
+          <!-- Sammanfattning -->
+          <div *ngIf="selectedRecording.summary" style="margin-top: 1.5rem;">
+            <h4 style="margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
+              <span class="material-symbols-rounded">summarize</span>
+              Sammanfattning
+            </h4>
+            <p style="background-color: #f9fafb; padding: 1rem; border-radius: 0.5rem; border-left: 4px solid #2563eb;">
+              {{ selectedRecording.summary }}
+            </p>
+          </div>
+
+          <!-- Viktiga punkter -->
+          <div *ngIf="selectedRecording.keyPoints && selectedRecording.keyPoints.length > 0" style="margin-top: 1.5rem;">
+            <h4 style="margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
+              <span class="material-symbols-rounded">checklist</span>
+              Viktiga punkter
+            </h4>
+            <ul style="background-color: #f9fafb; padding: 1rem; border-radius: 0.5rem; border-left: 4px solid #16a34a;">
+              <li *ngFor="let point of selectedRecording.keyPoints" style="margin-bottom: 0.5rem;">
+                {{ point }}
+              </li>
+            </ul>
+          </div>
+
+          <!-- Fullständig transkribering -->
+          <div style="margin-top: 1.5rem;">
+            <h4 style="margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
+              <span class="material-symbols-rounded">transcribe</span>
+              Fullständig transkribering
+            </h4>
+            <div style="background-color: #f9fafb; padding: 1rem; border-radius: 0.5rem; max-height: 300px; overflow-y: auto; white-space: pre-wrap; line-height: 1.6;">
+              {{ selectedRecording.transcription }}
             </div>
           </div>
         </div>

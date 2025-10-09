@@ -1,5 +1,6 @@
 import { CommonModule, DatePipe } from '@angular/common';
-import { Component, Input, output, Output } from '@angular/core';
+import { Component, Input, output, Output, inject } from '@angular/core';
+import { Router } from '@angular/router';
 import { BookingRead } from '../ResourceMenu/models/booking.model';
 
 @Component({
@@ -16,6 +17,8 @@ export class BookingListComponent {
   @Input() error: string = '';
   @Input() search: string = '';
 
+  private router = inject(Router);
+  
   bookingSelected = output<number>();
   searchChange = output<string>();
 
@@ -25,5 +28,22 @@ export class BookingListComponent {
 
   onSearchInput(value: string) {
     this.searchChange.emit(value);
+  }
+
+  goToMeetingRoom(bookingId: number, event: Event) {
+    event.stopPropagation(); // Förhindra att bokningen markeras som vald
+    this.router.navigate(['/motesrum', bookingId]);
+  }
+
+  isToday(dateString: string): boolean {
+    const bookingDate = new Date(dateString);
+    const today = new Date();
+    return bookingDate.toDateString() === today.toDateString();
+  }
+
+  isFuture(dateString: string): boolean {
+    const bookingDate = new Date(dateString);
+    const now = new Date();
+    return bookingDate > now;
   }
 }

@@ -1,7 +1,7 @@
 <div class="rounded-2xl bg-bg-alt p-3">
   <!-- Header-rad med typväljare -->
   <div
-    class="mb-3 flex items-center gap-2 bg-white rounded-full px-3 py-2 text-[#993f3b] border border-border"
+    class="mb-3 flex items-center gap-2 bg-bg rounded-md px-3 py-2 text-[#993f3b] border border-border"
   >
     <span class="material-symbols-rounded text-[#993f3b] opacity-70"
       >category</span
@@ -29,11 +29,15 @@
 
   <!-- Lista -->
   <ul
-    class="divide-y divide-border rounded-xl overflow-hidden bg-white border border-border"
+    class="divide-y divide-border rounded-xl overflow-hidden bg-bg border border-border"
   >
     <li
       *ngFor="let r of resources"
       class="flex items-center justify-between px-4 py-3 gap-y-3 gap-x-2 flex-wrap"
+      [ngClass]="{
+        'bg-primary text-white rounded-md shadow-sm': r.id === selectedTypeId,
+        'hover:bg-bg-alt': r.id !== selectedTypeId
+      }"
     >
       <div>
         <div class="font-medium text-heading">{{ r.name }}</div>
@@ -43,27 +47,21 @@
       </div>
 
       <div class="flex items-center gap-2">
-        <app-button
-          label="Redigera"
-          [buttonStyle]="'outlined'"
-          [borderRadius]="'br-full'"
-          [size]="'small'"
-          [bgColor]="'var(--color-border)'"
-          [textColor]="'var(--color-text)'"
-          (onClick)="edit.emit(r)"
+        <button
+          type="button"
+          (click)="edit.emit(r)"
+          class="text-sm px-3 py-1 rounded-md border border-border bg-transparent text-text hover:bg-bg-alt"
         >
-        </app-button>
+          Redigera
+        </button>
 
-        <app-button
-          label="Ta bort"
-          [buttonStyle]="'filled'"
-          [borderRadius]="'br-full'"
-          [size]="'small'"
-          [bgColor]="'var(--color-primary)'"
-          [textColor]="'#fff'"
-          (onClick)="remove.emit(r)"
+        <button
+          type="button"
+          (click)="remove.emit(r)"
+          class="text-sm px-3 py-1 rounded-md bg-primary text-white hover:bg-primary/90"
         >
-        </app-button>
+          Ta bort
+        </button>
       </div>
     </li>
 

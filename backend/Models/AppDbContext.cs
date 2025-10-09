@@ -14,6 +14,7 @@ public class AppDbContext : DbContext
    public DbSet<Resource> Resources { get; set; }
    public DbSet<ResourceType> ResourceTypes { get; set; }
    public DbSet<Booking> Bookings { get; set; }
+   public DbSet<MeetingRecording> MeetingRecordings { get; set; }
 
    protected override void OnModelCreating(ModelBuilder modelBuilder)
    {
@@ -28,6 +29,11 @@ public class AppDbContext : DbContext
          .HasOne(r => r.ResourceType)
          .WithMany()
          .HasForeignKey(r => r.ResourceTypeId);
+
+      modelBuilder.Entity<MeetingRecording>()
+         .HasOne(mr => mr.Booking)
+         .WithMany()
+         .HasForeignKey(mr => mr.BookingId);
 
       modelBuilder.Entity<ResourceType>().HasData(
          new ResourceType { Id = 1, Name = "Dropin-skrivbord" },

@@ -1,0 +1,363 @@
+<div class="page-container">
+  <div class="page-container__inner">
+    <div class="mx-auto max-w-4xl">
+      <!-- Header -->
+      <div class="mb-6">
+        <div class="flex items-center justify-between mb-2">
+          <h1 class="text-2xl font-bold text-heading">Mötesrum</h1>
+          <button
+            type="button"
+            (click)="goBackToBookings()"
+            class="inline-flex items-center gap-2 px-4 py-2 text-sm text-text/70 hover:text-text transition-colors"
+          >
+            <span class="material-symbols-rounded text-lg">arrow_back</span>
+            Tillbaka till bokningar
+          </button>
+        </div>
+        
+        <!-- Loading state -->
+        <div *ngIf="loading" class="flex items-center gap-2 text-text/70">
+          <span class="material-symbols-rounded animate-spin">autorenew</span>
+          Laddar bokningsdetaljer...
+        </div>
+        
+        <!-- Error state -->
+        <div *ngIf="error && !booking" class="text-error">
+          {{ error }}
+        </div>
+      </div>
+
+      <!-- Booking Info -->
+      <div *ngIf="booking" class="rounded-2xl bg-bg-alt p-6 mb-6">
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <h2 class="text-xl font-semibold text-heading mb-1">
+              {{ booking.resourceName }}
+            </h2>
+            <p class="text-text/70">
+              {{ booking.startTime | date:'d MMMM yyyy':'sv-SE' }} • {{ meetingTimeInfo }}
+            </p>
+          </div>
+          <div class="text-right">
+            <div 
+              class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium"
+              [ngClass]="{
+                'bg-success/20 text-success': meetingStarted && !meetingEnded,
+                'bg-warning/20 text-warning': !meetingStarted,
+                'bg-text/20 text-text': meetingEnded
+              }"
+            >
+              <span 
+                class="material-symbols-rounded text-base mr-1"
+                [ngClass]="{
+                  'text-success': meetingStarted && !meetingEnded,
+                  'text-warning': !meetingStarted,
+                  'text-text': meetingEnded
+                }"
+              >
+                {{ meetingStarted && !meetingEnded ? 'play_circle' : !meetingStarted ? 'schedule' : 'check_circle' }}
+              </span>
+              {{ meetingStatus }}
+            </div>
+          </div>
+        </div>
+        
+        <div class="text-sm text-text/70">
+          <p><strong>Bokning ID:</strong> {{ booking.id }}</p>
+          <p><strong>Bokad av:</strong> {{ booking.userName || booking.userId }}</p>
+        </div>
+      </div>
+
+      <!-- AI Transcription Section -->
+      <div class="rounded-2xl bg-bg-alt p-6">
+        <div class="flex items-center gap-3 mb-4">
+          <span class="material-symbols-rounded text-2xl text-primary">mic</span>
+          <div>
+            <h3 class="text-lg font-semibold text-heading">AI Mötestranskribering</h3>
+            <p class="text-sm text-text/70">Spela in ljud direkt eller ladda upp en ljudfil för automatisk transkribering</p>
+          </div>
+        </div>
+
+        <!-- Recording Section -->
+        <div *ngIf="!transcriptionResult && !selectedFile" class="space-y-6">
+          <!-- Recording Controls -->
+          <div class="border-2 border-dashed border-border rounded-lg p-6">
+            <div class="text-center space-y-4">
+              <div class="flex items-center justify-center">
+                <div 
+                  class="w-16 h-16 rounded-full flex items-center justify-center transition-all duration-300"
+                  [ngClass]="{
+                    'bg-error/20 animate-pulse': isRecording && !isPaused,
+                    'bg-warning/20': isPaused,
+                    'bg-primary/20': !isRecording && !recordedAudio,
+                    'bg-success/20': recordedAudio
+                  }"
+                >
+                  <span 
+                    class="material-symbols-rounded text-2xl"
+                    [ngClass]="{
+                      'text-error': isRecording && !isPaused,
+                      'text-warning': isPaused,
+                      'text-primary': !isRecording && !recordedAudio,
+                      'text-success': recordedAudio
+                    }"
+                  >
+                    {{ recordedAudio ? 'check_circle' : isRecording ? 'stop' : 'mic' }}
+                  </span>
+                </div>
+              </div>
+
+              <!-- Recording Status -->
+              <div class="space-y-2">
+                <div *ngIf="!isRecording && !recordedAudio && canRecord" class="text-text/70">
+                  Klicka för att börja spela in mötet
+                </div>
+                <div *ngIf="isRecording" class="space-y-2">
+                  <div class="text-lg font-mono text-error">{{ recordingTimeFormatted }}</div>
+                  <div class="text-sm text-text/70">
+                    {{ isPaused ? 'Inspelning pausad' : 'Spelar in...' }}
+                  </div>
+                </div>
+                <div *ngIf="recordedAudio" class="space-y-2">
+                  <div class="text-lg font-medium text-success">Inspelning klar!</div>
+                  <div class="text-sm text-text/70">
+                    Längd: {{ recordingTimeFormatted }}
+                  </div>
+                </div>
+                <div *ngIf="!canRecord && !recordedAudio" class="text-sm text-warning">
+                  {{ !meetingStarted ? 'Mötet har inte startat ännu' : 'Transkribering pågår...' }}
+                </div>
+              </div>
+
+              <!-- Recording Buttons -->
+              <div class="flex items-center justify-center gap-3">
+                <!-- Start Recording -->
+                <button
+                  *ngIf="!isRecording && !recordedAudio"
+                  [disabled]="!canRecord"
+                  (click)="startRecording()"
+                  class="bg-red-500 hover:bg-red-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white px-6 py-3 rounded-lg flex items-center gap-2 transition-colors font-medium shadow-lg"
+                >
+                  <span class="material-symbols-rounded text-xl">fiber_manual_record</span>
+                  Starta inspelning
+                </button>
+
+                <!-- Pause/Resume -->
+                <button
+                  *ngIf="isRecording"
+                  (click)="isPaused ? resumeRecording() : pauseRecording()"
+                  class="bg-yellow-500 hover:bg-yellow-600 text-white px-6 py-3 rounded-lg flex items-center gap-2 transition-colors font-medium shadow-lg"
+                >
+                  <span class="material-symbols-rounded text-xl">
+                    {{ isPaused ? 'play_arrow' : 'pause' }}
+                  </span>
+                  {{ isPaused ? 'Fortsätt' : 'Pausa' }}
+                </button>
+
+                <!-- Stop Recording -->
+                <button
+                  *ngIf="isRecording"
+                  (click)="stopRecording()"
+                  class="bg-gray-600 hover:bg-gray-700 text-white px-6 py-3 rounded-lg flex items-center gap-2 transition-colors font-medium shadow-lg"
+                >
+                  <span class="material-symbols-rounded text-xl">stop</span>
+                  Stoppa inspelning
+                </button>
+
+                <!-- Use Recording -->
+                <button
+                  *ngIf="recordedAudio"
+                  (click)="useRecordedAudio()"
+                  class="bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-lg flex items-center gap-2 transition-colors font-medium shadow-lg"
+                >
+                  <span class="material-symbols-rounded text-xl">transcribe</span>
+                  Transkribera inspelning
+                </button>
+
+                <!-- Discard Recording -->
+                <button
+                  *ngIf="recordedAudio"
+                  (click)="discardRecording()"
+                  class="bg-red-500 hover:bg-red-600 text-white px-6 py-3 rounded-lg flex items-center gap-2 transition-colors font-medium shadow-lg"
+                >
+                  <span class="material-symbols-rounded text-xl">delete</span>
+                  Kasta inspelning
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Audio Preview -->
+          <div *ngIf="recordedAudio" class="p-4 bg-bg rounded-lg border">
+            <div class="flex items-center gap-3 mb-3">
+              <span class="material-symbols-rounded text-primary">audio_file</span>
+              <div>
+                <p class="font-medium text-heading">Inspelad ljudfil</p>
+                <p class="text-sm text-text/70">{{ recordingTimeFormatted }} • WebM-format</p>
+              </div>
+            </div>
+            <audio [src]="recordedAudio.url" controls class="w-full"></audio>
+          </div>
+
+          <!-- Eller separator -->
+          <div class="flex items-center gap-4">
+            <div class="flex-1 h-px bg-border"></div>
+            <span class="text-sm text-text/70 px-2">eller</span>
+            <div class="flex-1 h-px bg-border"></div>
+          </div>
+        </div>
+
+        <!-- Upload Section -->
+        <div *ngIf="!transcriptionResult && !recordedAudio" class="space-y-4">
+          <!-- File Input -->
+          <div class="border-2 border-dashed border-border rounded-lg p-6 text-center">
+            <div class="space-y-3">
+              <span class="material-symbols-rounded text-4xl text-text/50">upload_file</span>
+              
+              <div>
+                <label 
+                  for="audioFile" 
+                  class="cursor-pointer inline-flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
+                  [class.opacity-50]="!canUploadAudio"
+                  [class.cursor-not-allowed]="!canUploadAudio"
+                >
+                  <span class="material-symbols-rounded">folder_open</span>
+                  Välj ljudfil
+                </label>
+                <input
+                  id="audioFile"
+                  type="file"
+                  accept="audio/*,.mp3,.wav"
+                  (change)="onFileSelected($event)"
+                  [disabled]="!canUploadAudio"
+                  class="hidden"
+                >
+              </div>
+              
+              <div class="text-sm text-text/70">
+                <p>Tillåtna format: .wav, .mp3 (max 25MB)</p>
+                <p *ngIf="!canUploadAudio" class="text-warning">
+                  {{ !meetingStarted ? 'Mötet har inte startat ännu' : 'Transkribering pågår...' }}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Selected File Info -->
+          <div *ngIf="selectedFile" class="flex items-center justify-between p-3 bg-bg rounded-lg border">
+            <div class="flex items-center gap-3">
+              <span class="material-symbols-rounded text-primary">audio_file</span>
+              <div>
+                <p class="font-medium text-heading">{{ selectedFile.name }}</p>
+                <p class="text-sm text-text/70">{{ (selectedFile.size / 1024 / 1024).toFixed(1) }} MB</p>
+              </div>
+            </div>
+            <button
+              [disabled]="!canUploadAudio || isTranscribing"
+              (click)="uploadAndTranscribe()"
+              class="inline-flex items-center gap-2 px-4 py-2 rounded-lg font-medium shadow-lg text-white bg-primary hover:bg-primary/90 disabled:bg-gray-300 disabled:cursor-not-allowed"
+            >
+              <span class="material-symbols-rounded mr-2">transcribe</span>
+              {{ isTranscribing ? 'Transkriberar...' : 'Starta transkribering' }}
+            </button>
+          </div>
+
+          <!-- Progress Bar -->
+          <div *ngIf="isTranscribing" class="space-y-2">
+            <div class="flex items-center justify-between text-sm">
+              <span class="text-text/70">Behandlar ljudfil...</span>
+              <span class="text-text/70">{{ uploadProgress }}%</span>
+            </div>
+            <div class="w-full bg-text/20 rounded-full h-2">
+              <div 
+                class="bg-primary h-2 rounded-full transition-all duration-300"
+                [style.width.%]="uploadProgress"
+              ></div>
+            </div>
+          </div>
+
+          <!-- Error Message -->
+          <div *ngIf="error" class="p-3 bg-error/10 border border-error/20 rounded-lg text-error">
+            {{ error }}
+          </div>
+        </div>
+
+        <!-- Results Section -->
+        <div *ngIf="transcriptionResult" class="space-y-6">
+          <!-- Success/Error Message -->
+          <div 
+            class="p-4 rounded-lg flex items-center gap-3"
+            [ngClass]="{
+              'bg-success/10 border border-success/20 text-success': transcriptionResult.success,
+              'bg-error/10 border border-error/20 text-error': !transcriptionResult.success
+            }"
+          >
+            <span class="material-symbols-rounded">
+              {{ transcriptionResult.success ? 'check_circle' : 'error' }}
+            </span>
+            {{ transcriptionResult.message }}
+          </div>
+
+          <!-- Transcription Results -->
+          <div *ngIf="transcriptionResult.success" class="space-y-6">
+            <!-- Summary -->
+            <div *ngIf="transcriptionResult.summary" class="space-y-3">
+              <div class="flex items-center gap-2">
+                <span class="material-symbols-rounded text-primary">summarize</span>
+                <h4 class="font-semibold text-heading">Sammanfattning</h4>
+              </div>
+              <div class="p-4 bg-bg rounded-lg border">
+                <p class="text-text">{{ transcriptionResult.summary }}</p>
+              </div>
+            </div>
+
+            <!-- Action Points -->
+            <div *ngIf="transcriptionResult.actionPoints?.length" class="space-y-3">
+              <div class="flex items-center gap-2">
+                <span class="material-symbols-rounded text-primary">task_alt</span>
+                <h4 class="font-semibold text-heading">Åtgärdspunkter</h4>
+              </div>
+              <div class="p-4 bg-bg rounded-lg border">
+                <ul class="space-y-2">
+                  <li 
+                    *ngFor="let point of transcriptionResult.actionPoints" 
+                    class="flex items-start gap-2"
+                  >
+                    <span class="material-symbols-rounded text-sm text-primary mt-0.5">arrow_right</span>
+                    <span class="text-text">{{ point }}</span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            <!-- Full Transcription -->
+            <div *ngIf="transcriptionResult.transcription" class="space-y-3">
+              <div class="flex items-center gap-2">
+                <span class="material-symbols-rounded text-primary">transcribe</span>
+                <h4 class="font-semibold text-heading">Fullständig transkribering</h4>
+              </div>
+              <div class="p-4 bg-bg rounded-lg border max-h-64 overflow-y-auto">
+                <p class="text-text whitespace-pre-wrap">{{ transcriptionResult.transcription }}</p>
+              </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="flex gap-3 pt-4 border-t">
+              <button
+                (click)="transcriptionResult = null; selectedFile = null"
+                class="inline-flex items-center gap-2 px-4 py-2 rounded-lg font-medium shadow text-primary bg-transparent border border-primary"
+              >
+                <span class="material-symbols-rounded mr-2">refresh</span>
+                Ny transkribering
+              </button>
+              <button class="inline-flex items-center gap-2 px-4 py-2 rounded-lg font-medium shadow-lg text-white bg-primary hover:bg-primary/90">
+                <span class="material-symbols-rounded mr-2">download</span>
+                Ladda ner resultat
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

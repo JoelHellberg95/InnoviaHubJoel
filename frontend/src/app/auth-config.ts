@@ -47,10 +47,10 @@ export const loginRequest: PopupRequest = {
 };
 
 export const protectedResources = {
-  // Temporarily disabled to avoid token issues with booking API
+  // Temporarily disable API mapping to avoid scope issues
   // innoviaApi: {
-  //   endpoint: `${window.__env?.NG_APP_API_URL}/api`,
-  //   scopes: ['user.read']
+  //   endpoint: `${window.__env?.NG_APP_API_URL || ''}/api`,
+  //   scopes: ['api://3933fee6-215f-4c6b-a343-53eb1ac968c4/access_as_user']
   // },
   graphApi: {
     endpoint: 'https://graph.microsoft.com/v1.0/me',
