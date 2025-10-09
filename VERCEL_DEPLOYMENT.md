@@ -114,8 +114,8 @@ In your Azure AD app registration, add your Vercel domain to:
 ## Post-Deployment Checklist
 
 - [ ] Frontend loads at Vercel URL
-- [ ] Authentication works (login/logout)
-- [ ] API calls reach your backend successfully
-- [ ] SignalR connection established
-- [ ] OpenAI integration works
-- [ ] All routes work with SPA routing
+- [x] Authentication works (login/logout)
+- [x] API calls reach your backend successfully
+- [x] SignalR connection established
+- [x] OpenAI integration works
+- [x] All routes work with SPA routing

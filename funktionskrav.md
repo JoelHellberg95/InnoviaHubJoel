@@ -40,7 +40,6 @@ Detta gör att systemet kan bearbeta verkliga ljudklipp och generera transkriber
 ## Begränsningar i testläge
 
 - Ingen realtidsinspelning via mikrofon.  
-- Samtyckeslogik hanteras som UI-flöde (ej faktiska personer).  
 - Uppladdade filer tas bort automatiskt efter bearbetning.  
 
 ---
@@ -50,4 +49,4 @@ Detta gör att systemet kan bearbeta verkliga ljudklipp och generera transkriber
 - Ger realistiska testdata.  
 - Möjliggör utveckling av full AI-pipeline (uppladdning → transkribering → sammanfattning) innan live-möten implementeras.
 
-Version av Open AI: Whisper till en kostnad på 0.006 $ per minut.
+Version av Open AI: Whisper till en kostnad på ca 0.006 $ per minut.

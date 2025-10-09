@@ -12,12 +12,14 @@ namespace backend.Controllers;
 /// 
 /// Denna controller ansvarar för:
 /// 1. Ta emot ljudfiler från frontend (antingen uppladdade filer eller live-inspelningar)
-/// 2. Skicka ljudet till AI-tjänster för transkribering (för närvarande simulerat)
-/// 3. Spara transkriberingen i databasen för framtida åtkomst
+/// 2. Skicka ljudet till AI-tjänster för transkribering 
+/// 3. Spara transkriberingen i databasen för framtida åtkomst(just nu i)
 /// 4. Tillhandahålla endpoints för att hämta tidigare transkriberingar
 /// 
 /// Säkerhet: Alla endpoints kräver Azure AD-autentisering.
-/// AI-integration: Förberedd för OpenAI Whisper API men använder testdata för utveckling.
+/// AI-integration: Använder OpenAI gpt-4o-mini-transcribe (Whisper) för transkribering
+/// och gpt-4.1 för att generera sammanfattningar och åtgärdspunkter.
+/// 
 /// </summary>
 [ApiController]
 [Route("api/[controller]")]
@@ -51,7 +53,7 @@ public class MeetingTranscriptionController : ControllerBase
     /// Denna metod:
     /// 1. Validerar den uppladdade filen (storlek, format, säkerhet)
     /// 2. Kontrollerar användarens behörighet via Azure AD-claims
-    /// 3. Skickar filen för AI-transkribering (simulerat för utveckling)
+    /// 3. Skickar filen för AI-transkribering (Whisper) och sammanfattning (Chat Completions)
     /// 4. Sparar resultatet i databasen för framtida åtkomst
     /// 5. Returnerar transkriberingen till frontend
     /// 
@@ -80,7 +82,7 @@ public class MeetingTranscriptionController : ControllerBase
             }
 
             // Säkerhet: Endast tillåt kända ljudformat (webm, wav, mp3) för att förhindra skadliga filer
-            // Whisper stödjer these common container types; block everything else.
+            // Whisper stödjer dessa format alla andra godkänns inte.
             var allowedTypes = new[] { "audio/webm", "audio/wav", "audio/mp3", "audio/mpeg" };
             if (!allowedTypes.Contains(audioFile.ContentType.ToLower()))
             {
@@ -88,17 +90,19 @@ public class MeetingTranscriptionController : ControllerBase
             }
 
             // === SÄKERHETSVALIDERING ===
-            // TEMP: Skip user validation since we're using AllowAnonymous for testing
-            var currentUserId = userId; // Use the provided userId from form
+            // TEMP: Eftersom vi använder AllowAnonymous för testning, hoppar vi över användarvalidering just nu.
+            var currentUserId = userId; // Fallback för testning
+            // I produktion skulle vi använda Azure AD-claims för att validera användaren
             if (string.IsNullOrEmpty(currentUserId))
             {
                 currentUserId = "12345678-1234-1234-1234-123456789012"; // Fallback GUID for testing
             }
 
             // === AI-TRANSKRIBERING ===
-            // Om OpenAI-nyckel är konfigurerad, använd Whisper för transkribering och
-            // använd även Chat Completions för att skapa summary + action points.
-            // Annars faller vi tillbaka till simulerad transkribering (utvecklingsläge).
+            // Om OpenAI-nyckel är konfigurerad, Använder OpenAI gpt-4o-mini-transcribe för transkribering
+            /// och gpt-4.1 för att generera sammanfattningar och åtgärdspunkter.
+            /// Sätts upp i Program.cs som named HttpClient "OpenAIClient"
+            /// Annars, använd en mock-metod för att simulera transkribering (endast för utveckling)
             var openAiKey = _configuration["OpenAI:ApiKey"];
             TranscriptionResult transcriptionResult;
             

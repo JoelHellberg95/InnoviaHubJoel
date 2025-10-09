@@ -10,6 +10,7 @@ InnoviaHub är en webbapplikation där användare kan:
 - Boka rum och resurser
 - Se tillgängliga tider
 - Hantera sina bokningar
+- Transkribera inspelningar.
 
 ## Teknik
 
