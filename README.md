@@ -25,6 +25,7 @@ InnoviaHub är en webbapplikation där användare kan:
 - .NET 9.0
 - ASP.NET Core API
 - Entity Framework
+- OpenAI API
 
 ## Kom igång
 
@@ -77,6 +78,12 @@ För att logga in, oavsett om det är lokalt eller i produktionsmiljön, behöve
 3. **Välj datum** med datumväljaren
 4. **Boka resurser** (kommer snart)
 5. **Logga ut** när du är klar
+
+## Meeting Room-funktion
+
+Det finns en detaljerad funktionsbeskrivning för mötesrum i filen `MEETING_ROOM_FEATURE.md` i projektroten. Den innehåller krav, förslag på UI-flöde och eventuella API-endpoints för mötesrumsbokning och hantering.
+
+Läs mer här: [Meeting Room Feature](MEETING_ROOM_FEATURE.md)
 
 ## Utveckling
 

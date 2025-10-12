@@ -26,7 +26,7 @@ public class OpenAIController : ControllerBase
         {
             // Använd named HttpClient som redan har OpenAI konfiguration
             var httpClient = _httpClientFactory.CreateClient("OpenAIClient");
-            
+
             var openAiApiKey = _configuration["OpenAI:ApiKey"];
             if (string.IsNullOrEmpty(openAiApiKey))
             {
@@ -37,18 +37,20 @@ public class OpenAIController : ControllerBase
             var content = new StringContent(json, Encoding.UTF8, "application/json");
 
             var response = await httpClient.PostAsync("/chat/completions", content);
-
+            // Hantera svaret från OpenAI API
             if (response.IsSuccessStatusCode)
             {
                 var responseContent = await response.Content.ReadAsStringAsync();
                 return Ok(JsonSerializer.Deserialize<object>(responseContent));
             }
+            // Hantera fel från OpenAI API
             else
             {
                 var errorContent = await response.Content.ReadAsStringAsync();
                 return StatusCode((int)response.StatusCode, errorContent);
             }
         }
+        // Hantera undantag
         catch (Exception ex)
         {
             return StatusCode(500, $"Error calling OpenAI API: {ex.Message}");

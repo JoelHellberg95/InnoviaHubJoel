@@ -33,7 +33,7 @@ En ny vy har skapats som användare kan nå när de har bokat ett mötesrum. Vyn
   - Tar emot ljudfil, mötes-ID och användar-ID
   - Validerar filtyp och storlek
   - Kontrollerar användarauktorisering
-  - Simulerar AI-transkribering (kan kopplas till OpenAI Whisper API)
+  - Transkriberar ljudfilen
   - Returnerar transkribering, sammanfattning och åtgärdspunkter
 
 - **Endpoint**: `GET /api/meetingtranscription/meeting/{meetingId}/transcription`
@@ -60,16 +60,14 @@ En ny vy har skapats som användare kan nå när de har bokat ett mötesrum. Vyn
 
 ### Nuvarande implementation
 
-- Simulerad transkribering med testdata
-- Mockad OpenAI Whisper API-funktionalitet
+- Integration med riktig OpenAI Whisper API
 - Strukturerat svar med transkribering, sammanfattning och åtgärdspunkter
+- Export-funktionalitet för resultat
 
 ### Framtida utbyggnad
 
-- Integration med riktig OpenAI Whisper API
 - Databaslagring av transkribering-resultat
 - Realtidsstatus för transkribering
-- Export-funktionalitet för resultat
 
 ## Tekniska detaljer
 
@@ -93,8 +91,8 @@ En ny vy har skapats som användare kan nå när de har bokat ett mötesrum. Vyn
 
 1. **Boka ett mötesrum** via `/boka`
 2. **Klicka "Gå till mötesrum"** i bekräftelse-popup
-3. **Ladda upp en ljudfil** (test med vilken .wav eller .mp3 fil som helst)
-4. **Se transkribering-resultatet** med test-data
+3. **Ladda upp en ljudfil eller spela in en egen** (använd .wav eller .mp3 fil)
+4. **Se transkribering-resultatet** (Du får en transribering direkt på sidan)
 
 ### Test-scenarion
 

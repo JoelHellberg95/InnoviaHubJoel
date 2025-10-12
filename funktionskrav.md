@@ -28,13 +28,10 @@ Detta gör att systemet kan bearbeta verkliga ljudklipp och generera transkriber
 3. **Generering av resultat**
    - AI-modellen skapar:
      - Transkriberad text  
-     - Sammanfattning  
-     - Identifierade åtgärdspunkter  
 
 4. **Presentation**
-   - Resultatet visas i gränssnittet på samma sätt som vid simulerad data.
-   - Deltagare ser sammanfattning, mötesledare ser full transkribering.
-
+   - Resultatet visas i gränssnittet.
+ 
 ---
 
 ## Begränsningar i testläge
