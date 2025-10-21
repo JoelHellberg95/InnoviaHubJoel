@@ -111,14 +111,41 @@ Om något inte fungerar:
 3. Kör `dotnet restore` i backend-mappen
 4. Starta om både frontend och backend
 
-## Bidra till projektet
-
-1. Skapa en ny branch: `git checkout -b min-nya-feature`
-2. Gör dina ändringar
-3. Committa: `git commit -m "Lägg till min nya feature"`
-4. Pusha: `git push origin min-nya-feature`
-5. Skapa en Pull Request
-
 ---
 
 ## Skapad av InnoviaHub-teamet
+
+## IoT-integration
+
+Den här applikationen kan integrera med ett lokalt IoT-backend för att visa sensorer och realtidsdata på sidan `/sensorer`.
+
+Vad som implementerats:
+
+- `IotService` i frontend ansvarar för att hämta tenant, lista enheter och ansluta till en SignalR-hub för realtidsmätningar.
+- `DeviceListComponent` visar enhetskort med senaste mätvärden (temp, CO2, humidity).
+
+Viktiga miljövariabler (läggs i `frontend/src/assets/env.js` eller via `scripts/generate-env.js`):
+
+- `NG_APP_IOT_API_URL` — Bas-URL för IoT DeviceRegistry API (t.ex. `http://localhost:5101`).
+- `NG_APP_IOT_HUB_URL` — Full URL till SignalR-hubben (t.ex. `http://localhost:5103/hub/telemetry`).
+- `NG_APP_API_URL` och `NG_APP_HUB_URL` används som fallback om IoT-specifika variabler saknas.
+
+SignalR-flöde (översikt):
+
+1. Frontend ansluter till hubben (`NG_APP_IOT_HUB_URL`) och ger automatiskt reconnect.
+2. Frontend anropar hub-metoden `JoinTenant('innovia')` för att gå med i tenant-specifika grupper.
+3. Hubben skickar `measurementReceived`-event till klienten med payload `{ tenantSlug, deviceId, type, value, time }`.
+4. `IotService` uppdaterar `devices$` och UI uppdateras.
+
+Felsökningstips:
+
+- Om frontend ser CORS-fel: kontrollera att IoT-backendens CORS tillåter `http://localhost:4200` (eller använd en dev-proxy i frontend).
+- Kontrollera `assets/env.js` för korrekta URL:er och att du startat om `ng serve` efter ändring.
+- Testa API med curl: `curl http://localhost:5101/api/tenants/by-slug/innovia` och `curl http://localhost:5101/api/tenants/<tenantId>/devices`.
+- Testa SignalR negotiate (manuellt):
+   `curl -i -X POST "http://localhost:5103/hub/telemetry/negotiate?negotiateVersion=1"`
+
+Designnoteringar:
+
+- Device-korten använder en heuristik på `model` för att avgöra vilka mätningar som ska visas (t.ex. om `model` innehåller "co2" eller "multi"). Detta kan bytas mot ett uttryckligt `capabilities`-fält från API:et om det finns.
+- Data precision formateras i UI (temp 1 decimal, CO2 inga decimaler, humidity 1 decimal).

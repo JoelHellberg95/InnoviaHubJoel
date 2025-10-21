@@ -1,0 +1,29 @@
+<div class="device-grid">
+  <!-- Enhetskort: visar serial, model och status -->
+  <div *ngFor="let d of devices" class="device-card">
+    <div class="card-header">
+      <div class="serial">{{d.serial}}</div>
+      <div class="model">{{d.model}}</div>
+      <div class="status" [class.active]="d.status==='active'">{{d.status}}</div>
+    </div>
+
+  <!-- Mätningar: bara rendera de fält som enheten faktiskt stöder -->
+  <div class="measurements">
+      <div class="measurement" *ngIf="supportsMeasurement(d, 'temperature')">
+        <div class="label">🌡️ Temp</div>
+        <div class="value">{{ d.latestMeasurements['temperature'] ? (d.latestMeasurements['temperature'].value | number:'1.1-1') + ' °C' : 'Waiting for data...' }}</div>
+        <div class="time">{{ timeSince(d.latestMeasurements['temperature']?.time) }}</div>
+      </div>
+      <div class="measurement" *ngIf="supportsMeasurement(d, 'co2')">
+        <div class="label">💨 CO2</div>
+        <div class="value">{{ d.latestMeasurements['co2'] ? (d.latestMeasurements['co2'].value | number:'1.0-0') + ' ppm' : 'Waiting for data...' }}</div>
+        <div class="time">{{ timeSince(d.latestMeasurements['co2']?.time) }}</div>
+      </div>
+      <div class="measurement" *ngIf="supportsMeasurement(d, 'humidity')">
+        <div class="label">💧 Humidity</div>
+        <div class="value">{{ d.latestMeasurements['humidity'] ? (d.latestMeasurements['humidity'].value | number:'1.1-1') + ' %' : 'Waiting for data...' }}</div>
+        <div class="time">{{ timeSince(d.latestMeasurements['humidity']?.time) }}</div>
+      </div>
+    </div>
+  </div>
+</div>

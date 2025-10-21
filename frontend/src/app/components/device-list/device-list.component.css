@@ -1,0 +1,47 @@
+/* Grid-layout för device-kort
+   - Responsiva brytpunkter definierade nedan
+   - Max 4 kolumner på stora skärmar
+*/
+.device-grid{
+  display: grid;
+  gap: 18px;
+  /* Start with single column on very small screens */
+  grid-template-columns: repeat(1, 1fr);
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Responsive: 2 cols on small tablets, 3 on medium, max 4 on large */
+@media (min-width: 640px) {
+  .device-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (min-width: 900px) {
+  .device-grid { grid-template-columns: repeat(3, 1fr); }
+}
+@media (min-width: 1200px) {
+  /* Större skärmar: max 4 kolumner och centrerad layout */
+  .device-grid { grid-template-columns: repeat(4, 1fr); max-width: 1400px; margin: 0 auto; }
+}
+.device-card{
+  /* Kort-styling: padding, radius och shadow för en modern kortkänsla */
+  border:1px solid #e5e7eb;
+  padding:18px;
+  border-radius:12px;
+  box-shadow:0 6px 18px rgba(16,24,40,0.06);
+  min-height:160px;
+  transition: transform .12s ease, box-shadow .12s ease;
+}
+.device-card:hover{
+  /* Liten hover-effekt för känsla av interaktivitet */
+  transform: translateY(-4px);
+  box-shadow:0 12px 30px rgba(16,24,40,0.08);
+}
+.card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.serial{font-weight:700;font-size:15px}
+.status{padding:6px 10px;border-radius:14px;background:#f3f4f6}
+.status.active{background:#dcfce7;color:#166534}
+.measurements{display:flex;gap:14px;justify-content:space-between;align-items:flex-start}
+.measurement{flex:1;min-width:90px}
+.label{font-size:12px;color:#6b7280;margin-bottom:6px}
+.value{font-weight:800;font-size:18px}
+.time{font-size:12px;color:#9ca3af;margin-top:6px}
