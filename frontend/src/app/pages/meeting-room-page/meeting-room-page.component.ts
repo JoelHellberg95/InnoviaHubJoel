@@ -144,8 +144,9 @@ export class MeetingRoomPageComponent implements OnInit, OnDestroy {
 
       // Use HttpClient with progress reporting
       this.uploadProgress = 0;
-      const apiUrl = (window as any).__env?.NG_APP_API_URL || '';
-      const url = `${apiUrl}/api/meetingtranscription/upload-and-transcribe`;
+      const aiApiUrl = (window as any).__env?.NG_APP_AI_API_URL || 'https://innoviahubjoel.onrender.com';
+      console.log('Using AI API URL for transcription:', aiApiUrl);
+      const url = `${aiApiUrl}/api/meetingtranscription/upload-and-transcribe`;
 
       this.http.post(url, formData, {
         reportProgress: true,
