@@ -106,7 +106,14 @@ public class MeetingTranscriptionController : ControllerBase
             /// och gpt-4.1 för att generera sammanfattningar och åtgärdspunkter.
             /// Sätts upp i Program.cs som named HttpClient "OpenAIClient"
             /// Annars, använd en mock-metod för att simulera transkribering (endast för utveckling)
-            var openAiKey = _configuration["OpenAI:ApiKey"];
+            
+            // Check both configuration and environment variable directly
+            var openAiKey = _configuration["OpenAI:ApiKey"] ?? Environment.GetEnvironmentVariable("OpenAI__ApiKey");
+            _logger.LogInformation("🔍 Checking OpenAI API Key sources:");
+            _logger.LogInformation("   - Configuration['OpenAI:ApiKey']: {HasConfigKey}", !string.IsNullOrEmpty(_configuration["OpenAI:ApiKey"]) ? "Found" : "Missing");
+            _logger.LogInformation("   - Environment['OpenAI__ApiKey']: {HasEnvKey}", !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("OpenAI__ApiKey")) ? "Found" : "Missing");
+            _logger.LogInformation("   - Final key used: {HasFinalKey}", !string.IsNullOrEmpty(openAiKey) ? $"Found ({openAiKey.Substring(0, Math.Min(10, openAiKey.Length))}...)" : "Missing");
+            
             TranscriptionResult transcriptionResult;
             
             if (!string.IsNullOrEmpty(openAiKey))
@@ -119,6 +126,7 @@ public class MeetingTranscriptionController : ControllerBase
             {
                 _logger.LogWarning("⚠️ NO OPENAI KEY - Using simulated transcription (mock data)");
                 _logger.LogWarning("💡 Set environment variable: OpenAI__ApiKey=your-api-key");
+                _logger.LogWarning("💡 Or set configuration: OpenAI:ApiKey in appsettings.json");
                 // Fallback för utveckling / tests
                 transcriptionResult = await SimulateTranscription(audioFile);
                 _logger.LogWarning("📝 Mock transcription completed - NOT REAL AI RESULT!");
@@ -274,6 +282,14 @@ public class MeetingTranscriptionController : ControllerBase
     {
         // Create client (Program.cs configures Authorization header if API key is present)
         var client = _httpClientFactory.CreateClient("OpenAIClient");
+        
+        // Double-check API key and manually add if needed
+        var apiKey = _configuration["OpenAI:ApiKey"] ?? Environment.GetEnvironmentVariable("OpenAI__ApiKey");
+        if (!string.IsNullOrEmpty(apiKey) && client.DefaultRequestHeaders.Authorization == null)
+        {
+            client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", apiKey);
+            _logger.LogInformation("🔧 Manually added API key to HttpClient");
+        }
 
         // Log file details for debugging
         _logger.LogInformation("🎵 Sending to OpenAI Whisper: {FileName}, Size: {Size} bytes, ContentType: {ContentType}", 
@@ -389,6 +405,13 @@ public class MeetingTranscriptionController : ControllerBase
     private async Task<(string summary, List<string> actions)> PostToOpenAIChatAsync(string transcription)
     {
         var client = _httpClientFactory.CreateClient("OpenAIClient");
+        
+        // Double-check API key
+        var apiKey = _configuration["OpenAI:ApiKey"] ?? Environment.GetEnvironmentVariable("OpenAI__ApiKey");
+        if (!string.IsNullOrEmpty(apiKey) && client.DefaultRequestHeaders.Authorization == null)
+        {
+            client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", apiKey);
+        }
 
         // Bygg en koncis prompt för att extrahera summary och action items
     var systemMessage = "Du är en assistent som extraherar en kort, faktabaserad sammanfattning och en lista med konkreta åtgärdspunkter (kortfattat) från ett mötesprotokoll. Använd INTE emojis, symboler eller dekorativ text. Återge action points som en JSON-array med endast text.";

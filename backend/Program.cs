@@ -97,8 +97,12 @@ builder.Services.AddHttpClient("OpenAIClient", client =>
    client.BaseAddress = new Uri(baseUrl);
    
    // Only set Authorization if API key exists
-   var apiKey = builder.Configuration["OpenAI:ApiKey"];
-   Console.WriteLine($"🔑 OpenAI API Key from config: {(string.IsNullOrEmpty(apiKey) ? "MISSING" : $"{apiKey.Substring(0, Math.Min(15, apiKey.Length))}...")}");
+   var apiKey = builder.Configuration["OpenAI:ApiKey"] ?? Environment.GetEnvironmentVariable("OpenAI__ApiKey");
+   
+   Console.WriteLine("� OpenAI API Key Detection:");
+   Console.WriteLine($"   - Configuration['OpenAI:ApiKey']: {(!string.IsNullOrEmpty(builder.Configuration["OpenAI:ApiKey"]) ? "Found" : "Missing")}");
+   Console.WriteLine($"   - Environment['OpenAI__ApiKey']: {(!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("OpenAI__ApiKey")) ? "Found" : "Missing")}");
+   Console.WriteLine($"   - Final key: {(string.IsNullOrEmpty(apiKey) ? "MISSING" : $"{apiKey.Substring(0, Math.Min(15, apiKey.Length))}...")}");
    
    if (!string.IsNullOrEmpty(apiKey))
    {
