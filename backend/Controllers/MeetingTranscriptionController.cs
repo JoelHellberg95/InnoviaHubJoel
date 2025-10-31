@@ -69,12 +69,19 @@ public class MeetingTranscriptionController : ControllerBase
     [HttpPost("upload-and-transcribe")]
     public async Task<IActionResult> UploadAndTranscribe(IFormFile audioFile, [FromForm] string meetingId, [FromForm] string userId)
     {
+        // Log at the very start to ensure we see entry
+        Console.WriteLine($"🎯 [TRANSCRIPTION] START - File: {audioFile?.FileName}, MeetingId: {meetingId}, UserId: {userId}");
+        _logger.LogInformation("🎯 TRANSCRIPTION ENDPOINT HIT - File: {FileName}, MeetingId: {MeetingId}, UserId: {UserId}", 
+            audioFile?.FileName, meetingId, userId);
+            
         try
         {
             // === FILVALIDERING ===
             // Kontrollera att en fil faktiskt laddades upp
+            Console.WriteLine($"🎯 [TRANSCRIPTION] File validation - File null: {audioFile == null}, Length: {audioFile?.Length}");
             if (audioFile == null || audioFile.Length == 0)
             {
+                Console.WriteLine("❌ [TRANSCRIPTION] No file uploaded");
                 return BadRequest("Ingen ljudfil uppladdad");
             }
 
@@ -109,6 +116,11 @@ public class MeetingTranscriptionController : ControllerBase
             
             // Check both configuration and environment variable directly
             var openAiKey = _configuration["OpenAI:ApiKey"] ?? Environment.GetEnvironmentVariable("OpenAI__ApiKey");
+            Console.WriteLine("🔍 [TRANSCRIPTION] API Key Check:");
+            Console.WriteLine($"   - Config key: {(!string.IsNullOrEmpty(_configuration["OpenAI:ApiKey"]) ? "Found" : "Missing")}");
+            Console.WriteLine($"   - Env key: {(!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("OpenAI__ApiKey")) ? "Found" : "Missing")}");
+            Console.WriteLine($"   - Final: {(!string.IsNullOrEmpty(openAiKey) ? "Found" : "Missing")}");
+            
             _logger.LogInformation("🔍 Checking OpenAI API Key sources:");
             _logger.LogInformation("   - Configuration['OpenAI:ApiKey']: {HasConfigKey}", !string.IsNullOrEmpty(_configuration["OpenAI:ApiKey"]) ? "Found" : "Missing");
             _logger.LogInformation("   - Environment['OpenAI__ApiKey']: {HasEnvKey}", !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("OpenAI__ApiKey")) ? "Found" : "Missing");
@@ -118,17 +130,21 @@ public class MeetingTranscriptionController : ControllerBase
             
             if (!string.IsNullOrEmpty(openAiKey))
             {
+                Console.WriteLine("🎙️ [TRANSCRIPTION] Using REAL OpenAI Whisper");
                 _logger.LogInformation("🎙️ USING REAL OPENAI WHISPER - API key found! File: {FileName}", audioFile.FileName);
                 transcriptionResult = await TranscribeWithOpenAIAsync(audioFile);
+                Console.WriteLine("✅ [TRANSCRIPTION] OpenAI completed successfully");
                 _logger.LogInformation("✅ OpenAI transcription completed successfully");
             }
             else
             {
+                Console.WriteLine("⚠️ [TRANSCRIPTION] NO API KEY - Using mock");
                 _logger.LogWarning("⚠️ NO OPENAI KEY - Using simulated transcription (mock data)");
                 _logger.LogWarning("💡 Set environment variable: OpenAI__ApiKey=your-api-key");
                 _logger.LogWarning("💡 Or set configuration: OpenAI:ApiKey in appsettings.json");
                 // Fallback för utveckling / tests
                 transcriptionResult = await SimulateTranscription(audioFile);
+                Console.WriteLine("📝 [TRANSCRIPTION] Mock completed");
                 _logger.LogWarning("📝 Mock transcription completed - NOT REAL AI RESULT!");
             }
 
@@ -157,6 +173,7 @@ public class MeetingTranscriptionController : ControllerBase
         catch (Exception ex)
         {
             // Logga fel för felsökning men exponera inte känslig information till användaren
+            Console.WriteLine($"💥 [TRANSCRIPTION] ERROR: {ex.Message}");
             _logger.LogError(ex, "Fel vid transkribering av ljudfil");
             
             // Log more detailed error info for debugging

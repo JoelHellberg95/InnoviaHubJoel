@@ -123,6 +123,22 @@ builder.Services.AddScoped<IResourceRepository, ResourceRepository>();
 
 var app = builder.Build();
 
+// Log startup information
+Console.WriteLine("🚀 [STARTUP] InnoviaHub Backend Starting...");
+Console.WriteLine($"🚀 [STARTUP] Environment: {app.Environment.EnvironmentName}");
+
+// Log all OpenAI environment variables
+Console.WriteLine("🔍 [STARTUP] All OpenAI Environment Variables:");
+foreach (DictionaryEntry envVar in Environment.GetEnvironmentVariables())
+{
+    var key = envVar.Key.ToString();
+    if (key.Contains("OpenAI", StringComparison.OrdinalIgnoreCase))
+    {
+        var value = envVar.Value?.ToString();
+        Console.WriteLine($"   {key} = {(!string.IsNullOrEmpty(value) ? $"{value.Substring(0, Math.Min(10, value.Length))}..." : "EMPTY")}");
+    }
+}
+
 
 // CORS måste aktiveras före andra middleware
 app.UseCors("ng");
