@@ -27,11 +27,16 @@ InnoviaHub är en webbapplikation där användare kan:
 - Entity Framework
 - OpenAI API
 
+**Deployment:**
+-Vercel
+-Render
+-Azure
+
 ## Kom igång
 
 ### Snabbstart
 
-Om du inte vill installera applikationen själv finns produktionsmiljön tillgänglig på [Digital Ocean](https://innoviahub-app-6hrgl.ondigitalocean.app/).
+Om du inte vill installera applikationen själv finns produktionsmiljön tillgänglig på (<https://innovia-hub-joel.vercel.app>).
 
 ### Entra ID
 

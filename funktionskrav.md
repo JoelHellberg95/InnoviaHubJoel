@@ -31,15 +31,6 @@ Detta gör att systemet kan bearbeta verkliga ljudklipp och generera transkriber
 
 4. **Presentation**
    - Resultatet visas i gränssnittet.
- 
----
-
-## Begränsningar i testläge
-
-- Ingen realtidsinspelning via mikrofon.  
-- Uppladdade filer tas bort automatiskt efter bearbetning.  
-
----
 
 ## Fördel
 
