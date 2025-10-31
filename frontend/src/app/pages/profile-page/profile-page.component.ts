@@ -119,7 +119,7 @@ export class ProfilePageComponent implements OnInit {
     this.isLoadingRecordings = true;
 
     try {
-      this.recordings = await this.recordingService.getUserRecordings(userId).toPromise() || [];
+      this.recordings = await this.recordingService.getAllRecordings(userId).toPromise() || [];
     } catch (error) {
       console.error('Fel vid hämtning av inspelningar:', error);
     } finally {

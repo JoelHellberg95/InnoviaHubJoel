@@ -14,6 +14,12 @@ export interface MeetingRecording {
   /** ID för bokningen som inspelningen tillhör - används för navigation */
   bookingId: number;
   
+  /** Azure AD Object ID för användaren som skapade inspelningen */
+  userId?: string;
+  
+  /** Visningsnamn för användaren som skapade inspelningen */
+  userName?: string;
+  
   /** Originalfilnamn för den uppladdade ljudfilen */
   fileName: string;
   

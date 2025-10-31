@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, of } from 'rxjs';
+import { map, catchError } from 'rxjs/operators';
 import { AppConfigService } from '../core/app-config.service';
 import { MeetingRecording } from '../types/meeting-recording.interface';
 
@@ -38,8 +39,9 @@ export class MeetingRecordingService {
    * @returns Observable med array av MeetingRecording objekt
    */
   getUserRecordings(userId: string): Observable<MeetingRecording[]> {
-    const apiUrl = this.appConfig.apiUrl;
-    return this.http.get<MeetingRecording[]>(`${apiUrl}/api/meetingtranscription/user/${userId}/recordings`);
+    const aiApiUrl = this.appConfig.aiApiUrl;
+    console.log('Using AI API URL for getUserRecordings:', aiApiUrl);
+    return this.http.get<MeetingRecording[]>(`${aiApiUrl}/api/meetingtranscription/user/${userId}/recordings`);
   }
 
   /**
@@ -55,8 +57,9 @@ export class MeetingRecordingService {
    * @returns Observable med transkriberingsdata
    */
   getMeetingTranscription(meetingId: string): Observable<any> {
-    const apiUrl = this.appConfig.apiUrl;
-    return this.http.get(`${apiUrl}/api/meetingtranscription/meeting/${meetingId}/transcription`);
+    const aiApiUrl = this.appConfig.aiApiUrl;
+    console.log('Using AI API URL for getMeetingTranscription:', aiApiUrl);
+    return this.http.get(`${aiApiUrl}/api/meetingtranscription/meeting/${meetingId}/transcription`);
   }
 
   /**
@@ -101,5 +104,122 @@ export class MeetingRecordingService {
     const remainingSeconds = seconds % 60;
     
     return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+  }
+
+  /**
+   * Sparar en transkribering lokalt i användarens localStorage.
+   * 
+   * Detta är en backup-lösning som sparar inspelningar lokalt i webbläsaren
+   * så att de finns kvar även om server-sessionen försvinner.
+   * 
+   * @param recording MeetingRecording objekt att spara
+   */
+  saveRecordingLocally(recording: MeetingRecording): void {
+    try {
+      const userId = recording.userId;
+      if (!userId) {
+        console.warn('Kan inte spara inspelning lokalt: userId saknas');
+        return;
+      }
+      
+      const storageKey = `meeting_recordings_${userId}`;
+      
+      // Hämta befintliga inspelningar för användaren
+      const existingRecordings = this.getLocalRecordings(userId);
+      
+      // Lägg till den nya inspelningen
+      existingRecordings.push(recording);
+      
+      // Spara tillbaka till localStorage
+      localStorage.setItem(storageKey, JSON.stringify(existingRecordings));
+      
+      console.log('Inspelning sparad lokalt för användare:', userId);
+    } catch (error) {
+      console.error('Fel vid lokal sparning av inspelning:', error);
+    }
+  }
+
+  /**
+   * Hämtar alla lokalt sparade inspelningar för en användare.
+   * 
+   * @param userId Azure AD Object ID för användaren
+   * @returns Array av lokalt sparade MeetingRecording objekt
+   */
+  getLocalRecordings(userId: string): MeetingRecording[] {
+    try {
+      const storageKey = `meeting_recordings_${userId}`;
+      const stored = localStorage.getItem(storageKey);
+      
+      if (stored) {
+        return JSON.parse(stored) as MeetingRecording[];
+      }
+      return [];
+    } catch (error) {
+      console.error('Fel vid hämtning av lokala inspelningar:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Kombinerar server-inspelningar med lokalt sparade inspelningar.
+   * 
+   * Denna metod försöker först hämta från servern, och om det misslyckas
+   * eller om servern inte har alla inspelningar, kombinerar den med lokala.
+   * 
+   * @param userId Azure AD Object ID för användaren
+   * @returns Observable med kombinerade inspelningar
+   */
+  getAllRecordings(userId: string): Observable<MeetingRecording[]> {
+    // Försök hämta från server först
+    return this.getUserRecordings(userId).pipe(
+      // Om server-anrop lyckas, kombinera med lokala inspelningar
+      map(serverRecordings => {
+        const localRecordings = this.getLocalRecordings(userId);
+        
+        // Kombinera och ta bort dubbletter baserat på ID eller timestamp
+        const combined = [...serverRecordings];
+        
+        localRecordings.forEach(localRec => {
+          const exists = combined.find(serverRec => 
+            serverRec.id === localRec.id || 
+            Math.abs(new Date(serverRec.createdAt).getTime() - new Date(localRec.createdAt).getTime()) < 1000
+          );
+          
+          if (!exists) {
+            combined.push(localRec);
+          }
+        });
+        
+        // Sortera efter datum (nyast först)
+        return combined.sort((a, b) => 
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        );
+      }),
+      // Om server-anrop misslyckas, använd bara lokala inspelningar
+      catchError(() => {
+        console.log('Server otillgänglig, använder endast lokala inspelningar');
+        return of(this.getLocalRecordings(userId));
+      })
+    );
+  }
+
+  /**
+   * Raderar en lokal inspelning.
+   * 
+   * @param userId Azure AD Object ID för användaren
+   * @param recordingId ID för inspelningen att radera
+   */
+  deleteLocalRecording(userId: string, recordingId: number): void {
+    try {
+      const recordings = this.getLocalRecordings(userId);
+      const filtered = recordings.filter(rec => rec.id !== recordingId);
+      
+      const storageKey = `meeting_recordings_${userId}`;
+      localStorage.setItem(storageKey, JSON.stringify(filtered));
+      
+      console.log('Lokal inspelning raderad:', recordingId);
+    } catch (error) {
+      console.error('Fel vid radering av lokal inspelning:', error);
+    }
   }
 }

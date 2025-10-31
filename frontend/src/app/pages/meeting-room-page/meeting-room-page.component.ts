@@ -7,7 +7,9 @@ import { MsalService } from '@azure/msal-angular';
 import { BookingService } from '../../components/ResourceMenu/Services/booking.service';
 import { OpenAIService } from '../../services/openai.service';
 import { AuthService } from '../../services/auth.service';
+import { MeetingRecordingService } from '../../services/meeting-recording.service';
 import { BookingRead } from '../../components/ResourceMenu/models/booking.model';
+import { MeetingRecording } from '../../types/meeting-recording.interface';
 
 interface AudioUploadResult {
   success: boolean;
@@ -38,6 +40,7 @@ export class MeetingRoomPageComponent implements OnInit, OnDestroy {
   private authService = inject(AuthService);
   private msalService = inject(MsalService);
   private http = inject(HttpClient);
+  private meetingRecordingService = inject(MeetingRecordingService);
 
   // State
   booking: BookingRead | null = null;
@@ -166,6 +169,31 @@ export class MeetingRoomPageComponent implements OnInit, OnDestroy {
                 summary: body.summary,
                 actionPoints: body.actionPoints || []
               };
+
+              // Spara inspelningen lokalt som backup
+              if (this.booking && this.selectedFile) {
+                const recording: MeetingRecording = {
+                  id: Date.now(), // Använd timestamp som temporärt ID
+                  bookingId: this.booking.id,
+                  userId: this.authService.getUserId() || undefined,
+                  userName: this.authService.getUserName() || undefined,
+                  fileName: this.selectedFile.name,
+                  fileSizeBytes: this.selectedFile.size,
+                  durationSeconds: this.uploadedFileDuration || 0,
+                  transcription: body.transcription || '',
+                  summary: body.summary || '',
+                  keyPoints: body.actionPoints || [],
+                  createdAt: new Date().toISOString(),
+                  booking: {
+                    resourceName: this.booking.resourceName || 'Okänt rum',
+                    startTime: this.booking.startTime,
+                    endTime: this.booking.endTime
+                  }
+                };
+
+                this.meetingRecordingService.saveRecordingLocally(recording);
+                console.log('Inspelning sparad lokalt som backup');
+              }
             } else {
               this.transcriptionResult = {
                 success: false,
