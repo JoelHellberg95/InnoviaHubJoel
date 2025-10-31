@@ -55,7 +55,7 @@ builder.Services.AddOpenApi();
 
 
 // För att använda inMemory-databas, sätt useInMemory till true
-var useInMemory = true;
+var useInMemory = false;
 
 if (useInMemory)
 {
@@ -77,7 +77,7 @@ builder.Services.AddCors(opt => {
    opt.AddPolicy("ng", p => p
       .WithOrigins(
          "http://localhost:4200",  // Local development
-         "https://your-vercel-domain.vercel.app"  // Vercel production (update this!)
+         "https://innovia-hub-joel.vercel.app/"  // Vercel deployment
       )
       .AllowAnyHeader()
       .AllowAnyMethod()
