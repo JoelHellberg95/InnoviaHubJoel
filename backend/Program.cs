@@ -77,7 +77,9 @@ builder.Services.AddCors(opt => {
    opt.AddPolicy("ng", p => p
       .WithOrigins(
          "http://localhost:4200",  // Local development
-         "https://innovia-hub-joel.vercel.app/"  // Vercel deployment
+         "https://innovia-hub-joel.vercel.app", // Vercel deployment
+         "https://innoviahubjoel.onrender.com", // Render deployment
+         "https://innoviahub.hellbergsystems.se:8004" // Production server
       )
       .AllowAnyHeader()
       .AllowAnyMethod()
