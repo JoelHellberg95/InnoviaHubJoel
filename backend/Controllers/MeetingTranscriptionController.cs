@@ -4,6 +4,8 @@ using Microsoft.EntityFrameworkCore;
 using backend.Models;
 using backend.Models.Entities;
 using System.Text.Json;
+using System.Collections.Concurrent;
+using System.Threading;
 
 namespace backend.Controllers;
 
@@ -13,7 +15,7 @@ namespace backend.Controllers;
 /// Denna controller ansvarar för:
 /// 1. Ta emot ljudfiler från frontend (antingen uppladdade filer eller live-inspelningar)
 /// 2. Skicka ljudet till AI-tjänster för transkribering 
-/// 3. Spara transkriberingen i databasen för framtida åtkomst(just nu i)
+/// 3. Spara transkriberingen i memory för framtida åtkomst
 /// 4. Tillhandahålla endpoints för att hämta tidigare transkriberingar
 /// 
 /// Säkerhet: Alla endpoints kräver Azure AD-autentisering.
@@ -30,21 +32,22 @@ public class MeetingTranscriptionController : ControllerBase
     private readonly IHttpClientFactory _httpClientFactory; // För framtida OpenAI API-anrop
     private readonly IConfiguration _configuration;         // För att läsa API-nycklar
     private readonly ILogger<MeetingTranscriptionController> _logger; // Logging
-    private readonly AppDbContext _context;                // Databasåtkomst
+
+    // In-memory storage för transkriberingar (istället för databas)
+    private static readonly ConcurrentDictionary<string, List<MeetingRecordingDto>> _transcriptions = new();
+    private static int _nextId = 1;
 
     /// <summary>
-    /// Konstruktor som injicerar HttpClientFactory, konfiguration, logger och databas.
+    /// Konstruktor som injicerar HttpClientFactory, konfiguration och logger.
     /// </summary>
     public MeetingTranscriptionController(
         IHttpClientFactory httpClientFactory,
         IConfiguration configuration,
-        ILogger<MeetingTranscriptionController> logger,
-        AppDbContext context)
+        ILogger<MeetingTranscriptionController> logger)
     {
         _httpClientFactory = httpClientFactory;
         _configuration = configuration;
         _logger = logger;
-        _context = context;
     }
 
     /// <summary>
@@ -125,10 +128,10 @@ public class MeetingTranscriptionController : ControllerBase
             // TEMP: Use fallback username since no auth claims available
             var userName = "Test User"; // Fallback for anonymous testing
             
-            // Konvertera meetingId till int och spara i databasen för framtida åtkomst
+            // Konvertera meetingId till int och spara i memory för framtida åtkomst
             if (int.TryParse(meetingId, out int bookingId))
             {
-                await SaveTranscriptionResult(bookingId, currentUserId, userName, audioFile, transcriptionResult);
+                SaveTranscriptionResult(bookingId, currentUserId, userName, audioFile, transcriptionResult);
             }
 
             // === SVAR TILL FRONTEND ===
@@ -205,12 +208,12 @@ public class MeetingTranscriptionController : ControllerBase
     }
 
     /// <summary>
-    /// Sparar transkriberingsresultatet i databasen för framtida åtkomst.
+    /// Sparar transkriberingsresultatet i memory för framtida åtkomst.
     /// 
     /// Denna metod skapar en permanent post av inspelningen och dess AI-analys
     /// så att användare kan komma tillbaka och se historik av sina möten.
     /// 
-    /// Databasen lagrar:
+    /// Memory lagrar:
     /// - Koppling till den ursprungliga bokningen/mötet
     /// - Användarinformation för säkerhet och åtkomstkontroll
     /// - Originalfilens metadata (namn, storlek)
@@ -222,13 +225,14 @@ public class MeetingTranscriptionController : ControllerBase
     /// <param name="userName">Visningsnamn för användaren</param>
     /// <param name="audioFile">Den ursprungliga ljudfilen för metadata</param>
     /// <param name="result">AI-transkriberingsresultatet</param>
-    private async Task SaveTranscriptionResult(int bookingId, string userId, string userName, IFormFile audioFile, TranscriptionResult result)
+    private void SaveTranscriptionResult(int bookingId, string userId, string userName, IFormFile audioFile, TranscriptionResult result)
     {
         try
         {
-            // Skapa en ny databaspost med all relevant information
-            var recording = new MeetingRecording
+            // Skapa en ny post med all relevant information
+            var recording = new MeetingRecordingDto
             {
+                Id = Interlocked.Increment(ref _nextId),
                 BookingId = bookingId,              // Koppla till ursprunglig bokning
                 UserId = userId,                    // Azure AD Object ID för säkerhet
                 UserName = userName,                // Visningsnamn för UI
@@ -242,12 +246,17 @@ public class MeetingTranscriptionController : ControllerBase
                 UpdatedAt = DateTime.UtcNow         // När posten senast uppdaterades
             };
 
-            // Lägg till i databas och spara
-            _context.MeetingRecordings.Add(recording);
-            await _context.SaveChangesAsync();
+            // Lägg till i memory storage
+            _transcriptions.AddOrUpdate(userId, 
+                new List<MeetingRecordingDto> { recording },
+                (key, existingList) => 
+                {
+                    existingList.Add(recording);
+                    return existingList;
+                });
 
             // Logga framgång för felsökning och audit trail
-            _logger.LogInformation("Transkribering sparad för bokning {BookingId} av användare {UserId}", bookingId, userId);
+            _logger.LogInformation("Transkribering sparad i memory för bokning {BookingId} av användare {UserId}", bookingId, userId);
         }
         catch (Exception ex)
         {
@@ -459,19 +468,17 @@ public class MeetingTranscriptionController : ControllerBase
     }
 
     /// <summary>
-    /// Hämtar alla inspelningar för en specifik användare.
+    /// Hämtar alla inspelningar för en specifik användare från memory.
     /// 
     /// Denna endpoint används av profilvyn för att visa användarens inspelningshistorik.
-    /// Resultatet inkluderar metadata om inspelningen samt koppling till ursprungliga bokningen
-    /// så att användaren kan se vilket mötesrum och vilken tid inspelningen gjordes.
+    /// Resultatet inkluderar metadata om inspelningen.
     /// 
     /// Säkerhet: Endast användaren själv kan se sina egna inspelningar.
-    /// Performance: Använder Entity Framework Include() för att ladda relaterade data i en query.
     /// </summary>
     /// <param name="userId">Azure AD Object ID för användaren vars inspelningar ska hämtas</param>
-    /// <returns>Lista av inspelningar med metadata och bokningsinformation</returns>
+    /// <returns>Lista av inspelningar med metadata</returns>
     [HttpGet("user/{userId}/recordings")]
-    public async Task<IActionResult> GetUserRecordings(string userId)
+    public IActionResult GetUserRecordings(string userId)
     {
         try
         {
@@ -484,32 +491,34 @@ public class MeetingTranscriptionController : ControllerBase
             }
             */
 
-            var recordings = await _context.MeetingRecordings
-                .Include(mr => mr.Booking)
-                .ThenInclude(b => b!.Resource)
-                .Where(mr => mr.UserId == userId)
-                .OrderByDescending(mr => mr.CreatedAt)
-                .Select(mr => new
-                {
-                    id = mr.Id,
-                    bookingId = mr.BookingId,
-                    fileName = mr.FileName,
-                    fileSizeBytes = mr.FileSizeBytes,
-                    durationSeconds = mr.DurationSeconds,
-                    transcription = mr.Transcription,
-                    summary = mr.Summary,
-                    keyPoints = mr.KeyPoints != null ? mr.KeyPoints.Split(';', StringSplitOptions.RemoveEmptyEntries) : new string[0],
-                    createdAt = mr.CreatedAt,
-                    booking = mr.Booking != null ? new
+            if (_transcriptions.TryGetValue(userId, out var userRecordings))
+            {
+                var recordings = userRecordings
+                    .OrderByDescending(mr => mr.CreatedAt)
+                    .Select(mr => new
                     {
-                        resourceName = mr.Booking.Resource!.Name,
-                        startTime = mr.Booking.StartTime,
-                        endTime = mr.Booking.EndTime
-                    } : null
-                })
-                .ToListAsync();
+                        id = mr.Id,
+                        bookingId = mr.BookingId,
+                        fileName = mr.FileName,
+                        fileSizeBytes = mr.FileSizeBytes,
+                        durationSeconds = mr.DurationSeconds,
+                        transcription = mr.Transcription,
+                        summary = mr.Summary,
+                        keyPoints = mr.KeyPoints != null ? mr.KeyPoints.Split(';', StringSplitOptions.RemoveEmptyEntries) : new string[0],
+                        createdAt = mr.CreatedAt,
+                        booking = new
+                        {
+                            resourceName = "Mötesrum", // Fallback since we don't have booking data
+                            startTime = DateTime.UtcNow.AddHours(-1),
+                            endTime = DateTime.UtcNow
+                        }
+                    })
+                    .ToList();
 
-            return Ok(recordings);
+                return Ok(recordings);
+            }
+
+            return Ok(new List<object>());
         }
         catch (Exception ex)
         {
@@ -519,7 +528,7 @@ public class MeetingTranscriptionController : ControllerBase
     }
 
     [HttpGet("meeting/{meetingId}/transcription")]
-    public async Task<IActionResult> GetMeetingTranscription(string meetingId)
+    public IActionResult GetMeetingTranscription(string meetingId)
     {
         try
         {
@@ -535,32 +544,34 @@ public class MeetingTranscriptionController : ControllerBase
                 return BadRequest("Ogiltigt mötes-ID");
             }
 
-            var recording = await _context.MeetingRecordings
-                .Include(mr => mr.Booking)
-                .ThenInclude(b => b!.Resource)
-                .FirstOrDefaultAsync(mr => mr.BookingId == bookingId && mr.UserId == currentUserId);
-
-            if (recording == null)
+            if (_transcriptions.TryGetValue(currentUserId, out var userRecordings))
             {
-                return NotFound("Ingen transkribering hittades för detta möte");
+                var recording = userRecordings.FirstOrDefault(mr => mr.BookingId == bookingId);
+                
+                if (recording == null)
+                {
+                    return NotFound("Ingen transkribering hittades för detta möte");
+                }
+
+                return Ok(new
+                {
+                    id = recording.Id,
+                    meetingId = recording.BookingId,
+                    fileName = recording.FileName,
+                    transcription = recording.Transcription,
+                    summary = recording.Summary,
+                    keyPoints = recording.KeyPoints != null ? recording.KeyPoints.Split(';', StringSplitOptions.RemoveEmptyEntries) : new string[0],
+                    createdAt = recording.CreatedAt,
+                    booking = new
+                    {
+                        resourceName = "Mötesrum",
+                        startTime = DateTime.UtcNow.AddHours(-1),
+                        endTime = DateTime.UtcNow
+                    }
+                });
             }
 
-            return Ok(new
-            {
-                id = recording.Id,
-                meetingId = recording.BookingId,
-                fileName = recording.FileName,
-                transcription = recording.Transcription,
-                summary = recording.Summary,
-                keyPoints = recording.KeyPoints != null ? recording.KeyPoints.Split(';', StringSplitOptions.RemoveEmptyEntries) : new string[0],
-                createdAt = recording.CreatedAt,
-                booking = new
-                {
-                    resourceName = recording.Booking!.Resource!.Name,
-                    startTime = recording.Booking.StartTime,
-                    endTime = recording.Booking.EndTime
-                }
-            });
+            return NotFound("Ingen transkribering hittades för detta möte");
         }
         catch (Exception ex)
         {
@@ -575,4 +586,23 @@ public class TranscriptionResult
     public string Transcription { get; set; } = string.Empty;
     public string Summary { get; set; } = string.Empty;
     public List<string> ActionPoints { get; set; } = new();
+}
+
+/// <summary>
+/// DTO för att spara transkiberingsdata i memory istället för databas
+/// </summary>
+public class MeetingRecordingDto
+{
+    public int Id { get; set; }
+    public int BookingId { get; set; }
+    public string UserId { get; set; } = string.Empty;
+    public string UserName { get; set; } = string.Empty;
+    public string FileName { get; set; } = string.Empty;
+    public long FileSizeBytes { get; set; }
+    public int DurationSeconds { get; set; }
+    public string Transcription { get; set; } = string.Empty;
+    public string? Summary { get; set; }
+    public string? KeyPoints { get; set; }
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 }
