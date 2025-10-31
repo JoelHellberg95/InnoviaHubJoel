@@ -10,13 +10,14 @@ export interface ResourceType {
 
 @Injectable({ providedIn: 'root' })
 export class ResourceTypeService {
-  private readonly baseUrl: string;
 
   constructor(private http: HttpClient, private cfg: AppConfigService) {
-    this.baseUrl = `${this.cfg.apiUrl}/api/resourcetype`;
+    console.log('ResourceTypeService cfg.apiUrl:', this.cfg.apiUrl);
   }
 
   getAll(): Observable<ResourceType[]> {
-    return this.http.get<ResourceType[]>(this.baseUrl);
+    const url = `${this.cfg.apiUrl}/api/resourcetype`;
+    console.log('ResourceTypeService making request to:', url);
+    return this.http.get<ResourceType[]>(url);
   }
 }
