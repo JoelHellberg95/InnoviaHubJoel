@@ -115,11 +115,15 @@ public class MeetingTranscriptionController : ControllerBase
             /// Annars, använd en mock-metod för att simulera transkribering (endast för utveckling)
             
             // Check both configuration and environment variable directly
-            var openAiKey = _configuration["OpenAI:ApiKey"] ?? Environment.GetEnvironmentVariable("OpenAI__ApiKey");
-            Console.WriteLine("🔍 [TRANSCRIPTION] API Key Check:");
-            Console.WriteLine($"   - Config key: {(!string.IsNullOrEmpty(_configuration["OpenAI:ApiKey"]) ? "Found" : "Missing")}");
-            Console.WriteLine($"   - Env key: {(!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("OpenAI__ApiKey")) ? "Found" : "Missing")}");
-            Console.WriteLine($"   - Final: {(!string.IsNullOrEmpty(openAiKey) ? "Found" : "Missing")}");
+            var configKey = _configuration["OpenAI:ApiKey"];
+            var envKey = Environment.GetEnvironmentVariable("OpenAI__ApiKey");
+            var openAiKey = configKey ?? envKey;
+            
+            Console.WriteLine("🔍 [TRANSCRIPTION] DETAILED API Key Check:");
+            Console.WriteLine($"   - Config key: '{configKey}' (Length: {configKey?.Length ?? 0})");
+            Console.WriteLine($"   - Env key: '{(!string.IsNullOrEmpty(envKey) ? $"{envKey.Substring(0, Math.Min(10, envKey.Length))}..." : "NULL")}' (Length: {envKey?.Length ?? 0})");
+            Console.WriteLine($"   - Final key: '{(!string.IsNullOrEmpty(openAiKey) ? $"{openAiKey.Substring(0, Math.Min(10, openAiKey.Length))}..." : "NULL")}' (Length: {openAiKey?.Length ?? 0})");
+            Console.WriteLine($"   - IsNullOrEmpty check: {string.IsNullOrEmpty(openAiKey)}");
             
             _logger.LogInformation("🔍 Checking OpenAI API Key sources:");
             _logger.LogInformation("   - Configuration['OpenAI:ApiKey']: {HasConfigKey}", !string.IsNullOrEmpty(_configuration["OpenAI:ApiKey"]) ? "Found" : "Missing");
@@ -297,14 +301,22 @@ public class MeetingTranscriptionController : ControllerBase
     /// </summary>
     private async Task<TranscriptionResult> TranscribeWithOpenAIAsync(IFormFile audioFile)
     {
+        Console.WriteLine("🚀 [TRANSCRIPTION] TranscribeWithOpenAIAsync CALLED!");
+        
         // Create client (Program.cs configures Authorization header if API key is present)
         var client = _httpClientFactory.CreateClient("OpenAIClient");
         
+        Console.WriteLine($"🔧 [TRANSCRIPTION] HttpClient created. BaseAddress: {client.BaseAddress}");
+        Console.WriteLine($"🔧 [TRANSCRIPTION] Authorization header: {client.DefaultRequestHeaders.Authorization?.ToString() ?? "NULL"}");
+        
         // Double-check API key and manually add if needed
         var apiKey = _configuration["OpenAI:ApiKey"] ?? Environment.GetEnvironmentVariable("OpenAI__ApiKey");
+        Console.WriteLine($"🔧 [TRANSCRIPTION] API key in method: {(!string.IsNullOrEmpty(apiKey) ? $"{apiKey.Substring(0, Math.Min(10, apiKey.Length))}..." : "NULL")}");
+        
         if (!string.IsNullOrEmpty(apiKey) && client.DefaultRequestHeaders.Authorization == null)
         {
             client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", apiKey);
+            Console.WriteLine("🔧 [TRANSCRIPTION] Manually added API key to HttpClient");
             _logger.LogInformation("🔧 Manually added API key to HttpClient");
         }
 
