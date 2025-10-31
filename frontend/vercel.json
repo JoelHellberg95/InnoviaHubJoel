@@ -4,9 +4,6 @@
   "framework": "angular",
   "installCommand": "npm install",
   "devCommand": "npm start",
-  "buildOutput": {
-    "static": true
-  },
   "rewrites": [
     {
       "source": "/(.*)",
