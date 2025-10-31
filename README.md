@@ -1,6 +1,8 @@
-# InnoviaHub
+# InnoviaHub vidareutvecklad version av Joel Hellberg
 
 Ett enkelt bokningssystem för resurser och faciliteter.
+Utvecklingen startade som ett grupprojekt från Team 3.
+Nu vidareutvecklad av Joel Hellberg med AI Och IOT funktionalitet.
 
 ## Vad är InnoviaHub?
 
@@ -10,7 +12,12 @@ InnoviaHub är en webbapplikation där användare kan:
 - Boka rum och resurser
 - Se tillgängliga tider
 - Hantera sina bokningar
-- Transkribera inspelningar.
+- Transkribera inspelningar.(Vidare utvecklat av Joel)
+- Se lokala IOT sensorer (Funkar enbart om man startar lokal server, ej online. Vidare utvecklat av Joel)
+
+## Besök sidan här: (enbart för godkända användare)
+
+<https://innovia-hub-joel.vercel.app/logga-in>
 
 ## Teknik
 
