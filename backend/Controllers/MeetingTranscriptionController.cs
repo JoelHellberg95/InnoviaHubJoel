@@ -115,6 +115,7 @@ public class MeetingTranscriptionController : ControllerBase
             else
             {
                 _logger.LogWarning("⚠️ NO OPENAI KEY - Using simulated transcription (mock data)");
+                _logger.LogWarning("💡 Set environment variable: OpenAI__ApiKey=your-api-key");
                 // Fallback för utveckling / tests
                 transcriptionResult = await SimulateTranscription(audioFile);
                 _logger.LogWarning("📝 Mock transcription completed - NOT REAL AI RESULT!");
@@ -146,6 +147,14 @@ public class MeetingTranscriptionController : ControllerBase
         {
             // Logga fel för felsökning men exponera inte känslig information till användaren
             _logger.LogError(ex, "Fel vid transkribering av ljudfil");
+            
+            // Log more detailed error info for debugging
+            _logger.LogError("Error details - Type: {ExceptionType}, Message: {Message}", ex.GetType().Name, ex.Message);
+            if (ex.InnerException != null)
+            {
+                _logger.LogError("Inner exception - Type: {InnerType}, Message: {InnerMessage}", ex.InnerException.GetType().Name, ex.InnerException.Message);
+            }
+            
             return StatusCode(500, new { success = false, message = $"Fel vid transkribering: {ex.Message}" });
         }
     }
